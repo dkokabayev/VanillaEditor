@@ -1,5 +1,7 @@
 package controls.text
 
+import java.io.File
+
 class TextBuffer {
     private val buffer = StringBuilder()
     var caretPosition = 0
@@ -32,4 +34,19 @@ class TextBuffer {
     }
 
     fun getLines(): List<String> = buffer.toString().split("\n")
+
+    fun clear() {
+        buffer.setLength(0)
+        caretPosition = 0
+    }
+
+    fun loadFromFile(file: File) {
+        clear()
+        buffer.append(file.readText())
+        caretPosition = buffer.length
+    }
+
+    fun saveToFile(file: File) {
+        file.writeText(buffer.toString())
+    }
 }

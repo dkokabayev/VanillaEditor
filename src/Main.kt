@@ -1,6 +1,7 @@
 import controls.text.TextComponent
 import java.awt.BorderLayout
 import javax.swing.*
+import javax.swing.filechooser.FileNameExtensionFilter
 
 object EditorSettings {
     const val FONT_NAME = "Monospaced"
@@ -10,6 +11,11 @@ object EditorSettings {
     const val EDITOR_WIDTH = 800
     const val EDITOR_HEIGHT = 600
     const val FRAME_TITLE = "Vanilla Editor"
+    const val FILE_MENU_TITLE = "File"
+    const val OPEN_FILE_TITLE = "Open"
+    const val SAVE_FILE_TITLE = "Save"
+    const val FILE_FILTER_DESCRIPTION = "java files"
+    const val FILE_EXTENSION = "java"
 }
 
 fun main() {
@@ -26,6 +32,37 @@ fun main() {
         )
 
         frame.add(JScrollPane(textComponent), BorderLayout.CENTER)
+
+        val menuBar = JMenuBar()
+        val fileMenu = JMenu(EditorSettings.FILE_MENU_TITLE)
+
+        val openItem = JMenuItem(EditorSettings.OPEN_FILE_TITLE).apply {
+            addActionListener {
+                val chooser = JFileChooser()
+                chooser.fileFilter =
+                    FileNameExtensionFilter(EditorSettings.FILE_FILTER_DESCRIPTION, EditorSettings.FILE_EXTENSION)
+                if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
+                    textComponent.openFile(chooser.selectedFile)
+                }
+            }
+        }
+
+        val saveItem = JMenuItem(EditorSettings.SAVE_FILE_TITLE).apply {
+            addActionListener {
+                val chooser = JFileChooser()
+                chooser.fileFilter =
+                    FileNameExtensionFilter(EditorSettings.FILE_FILTER_DESCRIPTION, EditorSettings.FILE_EXTENSION)
+                if (chooser.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
+                    textComponent.saveFile(chooser.selectedFile)
+                }
+            }
+        }
+
+        fileMenu.add(openItem)
+        fileMenu.add(saveItem)
+        menuBar.add(fileMenu)
+        frame.jMenuBar = menuBar
+
         frame.isVisible = true
     }
 }

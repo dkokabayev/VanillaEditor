@@ -7,6 +7,7 @@ import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.io.File
 import javax.swing.JComponent
 import javax.swing.Timer
 
@@ -113,5 +114,14 @@ class TextComponent(
         override fun mouseClicked(e: MouseEvent) {
             requestFocusInWindow()
         }
+    }
+
+    fun openFile(file: File) {
+        textBuffer.loadFromFile(file)
+        repaint()
+    }
+
+    fun saveFile(file: File) {
+        textBuffer.saveToFile(file)
     }
 }
