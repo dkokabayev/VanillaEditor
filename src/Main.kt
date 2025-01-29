@@ -16,6 +16,7 @@ object EditorSettings {
     const val SAVE_FILE_TITLE = "Save"
     const val FILE_FILTER_DESCRIPTION = "java files"
     const val FILE_EXTENSION = "java"
+    const val NEW_LINE_CHAR = '\n'
 }
 
 fun main() {
@@ -29,6 +30,7 @@ fun main() {
             fontSize = EditorSettings.FONT_SIZE,
             caretBlinkRate = EditorSettings.CARET_BLINK_RATE,
             backspaceRepeatRate = EditorSettings.BACKSPACE_REPEAT_RATE,
+            newLineChar = EditorSettings.NEW_LINE_CHAR,
         )
 
         frame.add(JScrollPane(textComponent), BorderLayout.CENTER)

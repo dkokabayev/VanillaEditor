@@ -16,9 +16,10 @@ class TextComponent(
     private val fontSize: Int = 14,
     private val caretBlinkRate: Int = 500,
     private val backspaceRepeatRate: Int = 50,
+    private val newLineChar: Char = '\n',
 ) : JComponent() {
 
-    private val textBuffer = TextBuffer()
+    private val textBuffer = TextBuffer(newLineChar)
     private var caretVisible = true
     private val defaultFont = Font(fontName, Font.PLAIN, fontSize)
 
@@ -82,9 +83,21 @@ class TextComponent(
                 }
 
                 KeyEvent.VK_DELETE -> textBuffer.deleteAtCaret()
-                KeyEvent.VK_LEFT -> textBuffer.moveCaretLeft()
-                KeyEvent.VK_RIGHT -> textBuffer.moveCaretRight()
-                KeyEvent.VK_ENTER -> textBuffer.insertChar('\n')
+                KeyEvent.VK_LEFT -> {
+                    when {
+                        e.isAltDown -> textBuffer.moveCaretToPreviousWord()
+                        else -> textBuffer.moveCaretLeft()
+                    }
+                }
+
+                KeyEvent.VK_RIGHT -> {
+                    when {
+                        e.isAltDown -> textBuffer.moveCaretToNextWord()
+                        else -> textBuffer.moveCaretRight()
+                    }
+                }
+
+                KeyEvent.VK_ENTER -> textBuffer.insertChar(newLineChar)
             }
             repaint()
         }
@@ -97,7 +110,7 @@ class TextComponent(
         }
 
         override fun keyTyped(e: KeyEvent) {
-            if (e.keyChar != KeyEvent.CHAR_UNDEFINED && !e.isControlDown && e.keyChar != '\n') {
+            if (e.keyChar != KeyEvent.CHAR_UNDEFINED && !e.isControlDown && e.keyChar != newLineChar) {
                 textBuffer.insertChar(e.keyChar)
                 repaint()
             }
