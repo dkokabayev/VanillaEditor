@@ -90,6 +90,49 @@ class TextBuffer(private val newLineChar: Char) {
         caretPosition = newPosition
     }
 
+    fun moveCaretUpWithOption() {
+        val currentLine = getCurrentLine()
+        val lineStart = currentLine.first
+
+        if (caretPosition > lineStart) {
+            caretPosition = lineStart
+            return
+        }
+
+        if (lineStart > 0) {
+            val previousLineEnd = lineStart - 1
+            val previousLineStart = buffer.lastIndexOf(newLineChar, previousLineEnd - 1) + 1
+            caretPosition = previousLineStart
+        }
+    }
+
+    fun moveCaretDownWithOption() {
+        val currentLine = getCurrentLine()
+        val lineStart = currentLine.first
+        val lineText = currentLine.second
+        val lineEnd = lineStart + lineText.length
+
+        if (caretPosition < lineEnd) {
+            caretPosition = lineEnd
+            return
+        }
+
+        if (lineEnd < buffer.length) {
+            val nextLineStart = lineEnd + 1
+            val nextLineEnd = buffer.indexOf(newLineChar, nextLineStart).let {
+                if (it == -1) buffer.length else it
+            }
+            caretPosition = nextLineEnd
+        }
+    }
+
+    private fun getCurrentLine(): Pair<Int, String> {
+        val text = buffer.toString()
+        val lineStart = text.lastIndexOf(newLineChar, caretPosition - 1) + 1
+        val lineEnd = text.indexOf(newLineChar, caretPosition).let { if (it == -1) text.length else it }
+        return Pair(lineStart, text.substring(lineStart, lineEnd))
+    }
+
     fun getLines(): List<String> = buffer.toString().split("\n")
 
     fun clear() {

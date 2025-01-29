@@ -97,6 +97,18 @@ class TextComponent(
                     }
                 }
 
+                KeyEvent.VK_UP -> {
+                    if (e.isAltDown) {
+                        textBuffer.moveCaretUpWithOption()
+                    }
+                }
+
+                KeyEvent.VK_DOWN -> {
+                    if (e.isAltDown) {
+                        textBuffer.moveCaretDownWithOption()
+                    }
+                }
+
                 KeyEvent.VK_ENTER -> textBuffer.insertChar(newLineChar)
             }
             repaint()
