@@ -59,7 +59,7 @@ class TextComponent(
             y += lineHeight
         }
 
-        if (caretVisible && !selectionModel.hasSelection) {
+        if (caretVisible) {
             val (caretX, caretY) = getCaretCoordinates(fm)
             g.drawLine(caretX + 5, caretY - fm.ascent, caretX + 5, caretY - fm.ascent + lineHeight)
         }
@@ -136,13 +136,7 @@ class TextComponent(
             when (e.keyCode) {
                 KeyEvent.VK_BACK_SPACE -> {
                     if (selectionModel.hasSelection) {
-                        selectionModel.getSelectionBounds()?.let { (start, end) ->
-                            for (i in end - 1 downTo start) {
-                                textBuffer.deleteCharAt(i)
-                            }
-                            caretModel.moveTo(start)
-                            selectionModel.clearSelection()
-                        }
+                        deleteSelectedText()
                     } else if (!backspacePressed) {
                         backspacePressed = true
                         val position = caretModel.getCurrentPosition()
@@ -156,13 +150,7 @@ class TextComponent(
 
                 KeyEvent.VK_DELETE -> {
                     if (selectionModel.hasSelection) {
-                        selectionModel.getSelectionBounds()?.let { (start, end) ->
-                            for (i in end - 1 downTo start) {
-                                textBuffer.deleteCharAt(i)
-                            }
-                            caretModel.moveTo(start)
-                            selectionModel.clearSelection()
-                        }
+                        deleteSelectedText()
                     } else {
                         val position = caretModel.getCurrentPosition()
                         if (position.offset < textBuffer.length) {
@@ -172,48 +160,74 @@ class TextComponent(
                 }
 
                 KeyEvent.VK_LEFT -> {
-                    selectionModel.clearSelection()
+                    val oldPosition = caretModel.position
                     when {
                         e.isControlDown || e.isMetaDown -> caretModel.moveToLineStart()
                         e.isAltDown -> caretModel.moveToPreviousWord()
                         else -> caretModel.moveLeft()
                     }
+                    if (e.isShiftDown) {
+                        if (!selectionModel.hasSelection) {
+                            selectionModel.startSelection(oldPosition)
+                        }
+                        selectionModel.updateSelection(caretModel.position)
+                    } else {
+                        selectionModel.clearSelection()
+                    }
                 }
 
                 KeyEvent.VK_RIGHT -> {
-                    selectionModel.clearSelection()
+                    val oldPosition = caretModel.position
                     when {
                         e.isControlDown || e.isMetaDown -> caretModel.moveToLineEnd()
                         e.isAltDown -> caretModel.moveToNextWord()
                         else -> caretModel.moveRight()
                     }
+                    if (e.isShiftDown) {
+                        if (!selectionModel.hasSelection) {
+                            selectionModel.startSelection(oldPosition)
+                        }
+                        selectionModel.updateSelection(caretModel.position)
+                    } else {
+                        selectionModel.clearSelection()
+                    }
                 }
 
                 KeyEvent.VK_UP -> {
-                    selectionModel.clearSelection()
+                    val oldPosition = caretModel.position
                     when {
                         e.isControlDown || e.isMetaDown -> caretModel.moveToTextStart()
                         e.isAltDown -> caretModel.moveUpWithOption()
                     }
+                    if (e.isShiftDown) {
+                        if (!selectionModel.hasSelection) {
+                            selectionModel.startSelection(oldPosition)
+                        }
+                        selectionModel.updateSelection(caretModel.position)
+                    } else {
+                        selectionModel.clearSelection()
+                    }
                 }
 
                 KeyEvent.VK_DOWN -> {
-                    selectionModel.clearSelection()
+                    val oldPosition = caretModel.position
                     when {
                         e.isControlDown || e.isMetaDown -> caretModel.moveToTextEnd()
                         e.isAltDown -> caretModel.moveDownWithOption()
+                    }
+                    if (e.isShiftDown) {
+                        if (!selectionModel.hasSelection) {
+                            selectionModel.startSelection(oldPosition)
+                        }
+                        selectionModel.updateSelection(caretModel.position)
+                    } else {
+                        selectionModel.clearSelection()
                     }
                 }
 
                 KeyEvent.VK_ENTER -> {
                     if (selectionModel.hasSelection) {
-                        selectionModel.getSelectionBounds()?.let { (start, end) ->
-                            for (i in end - 1 downTo start) {
-                                textBuffer.deleteCharAt(i)
-                            }
-                            caretModel.moveTo(start)
-                            selectionModel.clearSelection()
-                        }
+                        deleteSelectedText()
                     }
                     val position = caretModel.getCurrentPosition()
                     textBuffer.insertChar(newLineChar, position.offset)
@@ -221,6 +235,16 @@ class TextComponent(
                 }
             }
             repaint()
+        }
+
+        private fun deleteSelectedText() {
+            selectionModel.getSelectionBounds()?.let { (start, end) ->
+                for (i in end - 1 downTo start) {
+                    textBuffer.deleteCharAt(i)
+                }
+                caretModel.moveTo(start)
+                selectionModel.clearSelection()
+            }
         }
 
         override fun keyReleased(e: KeyEvent) {
@@ -233,13 +257,7 @@ class TextComponent(
         override fun keyTyped(e: KeyEvent) {
             if (e.keyChar != KeyEvent.CHAR_UNDEFINED && !e.isControlDown && e.keyChar != newLineChar) {
                 if (selectionModel.hasSelection) {
-                    selectionModel.getSelectionBounds()?.let { (start, end) ->
-                        for (i in end - 1 downTo start) {
-                            textBuffer.deleteCharAt(i)
-                        }
-                        caretModel.moveTo(start)
-                        selectionModel.clearSelection()
-                    }
+                    deleteSelectedText()
                 }
                 val position = caretModel.getCurrentPosition()
                 textBuffer.insertChar(e.keyChar, position.offset)
@@ -266,15 +284,21 @@ class TextComponent(
         override fun mousePressed(e: MouseEvent) {
             requestFocusInWindow()
             val position = getPositionFromPoint(e.point)
-            caretModel.moveTo(position)
-            selectionModel.startSelection(position)
+
+            if (e.isShiftDown && selectionModel.hasSelection) {
+                selectionModel.updateSelection(position)
+            } else {
+                caretModel.moveTo(position)
+                selectionModel.startSelection(position)
+            }
+
             isMouseDragging = true
             repaint()
         }
 
         override fun mouseReleased(e: MouseEvent) {
             isMouseDragging = false
-            if (selectionModel.selectionStart == selectionModel.selectionEnd) {
+            if (selectionModel.selectionStart == selectionModel.selectionEnd && !e.isShiftDown) {
                 selectionModel.clearSelection()
             }
             repaint()
