@@ -7,9 +7,9 @@ import javax.swing.JComponent
 import javax.swing.Timer
 
 class TextComponent(
-    private val fontName: String = "Monospaced",
-    private val fontSize: Int = 14,
-    private val caretBlinkRate: Int = 500,
+    fontName: String = "Monospaced",
+    fontSize: Int = 14,
+    caretBlinkRate: Int = 500,
     private val backspaceRepeatRate: Int = 50,
     private val newLineChar: Char = '\n',
 ) : JComponent() {
@@ -17,13 +17,12 @@ class TextComponent(
     private val textBuffer = TextBuffer(newLineChar)
     private val caretModel = CaretModel(textBuffer)
     private var caretVisible = true
-    private val defaultFont = Font(fontName, Font.PLAIN, fontSize)
 
     private var backspacePressed = false
     private var backspaceTimer: Timer? = null
 
     init {
-        font = defaultFont
+        font = Font(fontName, Font.PLAIN, fontSize)
         addKeyListener(TextKeyListener())
         addMouseListener(TextMouseListener())
         isFocusable = true
@@ -37,7 +36,7 @@ class TextComponent(
 
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
-        g.font = defaultFont
+        g.font = font
 
         val fm = g.fontMetrics
         val lineHeight = fm.ascent + fm.descent
