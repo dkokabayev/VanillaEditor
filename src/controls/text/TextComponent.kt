@@ -11,14 +11,15 @@ class TextComponent(
     caretBlinkRate: Int = 500,
     private val backspaceRepeatRate: Int = 50,
     private val newLineChar: Char = '\n',
-    val fontColor: Color = Color.BLACK,
-    val selectionColor: Color = Color.PINK,
+    private val fontColor: Color = Color.BLACK,
+    private val selectionColor: Color = Color.PINK,
 ) : JComponent() {
 
     private val textBuffer = TextBuffer(newLineChar)
     private val caretModel = CaretModel(textBuffer)
     private val selectionModel = SelectionModel(textBuffer)
     private var caretVisible = true
+    private val caretBlinkTimer: Timer
 
     private var backspacePressed = false
     private var backspaceTimer: Timer? = null
@@ -32,10 +33,12 @@ class TextComponent(
         isFocusable = true
         focusTraversalKeysEnabled = false
 
-        Timer(caretBlinkRate) {
+        caretBlinkTimer = Timer(caretBlinkRate) {
             caretVisible = !caretVisible
             repaint()
-        }.start()
+        }.apply {
+            isRepeats = true
+        }
     }
 
     var text: String
@@ -49,6 +52,16 @@ class TextComponent(
             selectionModel.clearSelection()
             repaint()
         }
+
+    override fun addNotify() {
+        super.addNotify()
+        caretBlinkTimer.start()
+    }
+
+    override fun removeNotify() {
+        super.removeNotify()
+        caretBlinkTimer.stop()
+    }
 
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
@@ -142,6 +155,12 @@ class TextComponent(
         return Pair(x, y)
     }
 
+    private fun restartCaretBlinking() {
+        caretBlinkTimer.restart()
+        caretVisible = true
+        repaint()
+    }
+
     private inner class TextKeyListener : KeyAdapter() {
         override fun keyPressed(e: KeyEvent) {
             when (e.keyCode) {
@@ -197,6 +216,8 @@ class TextComponent(
             if (e.isShiftDown) {
                 selectionModel.updateSelection(caretModel.position)
             }
+
+            restartCaretBlinking()
         }
 
         private fun handleRightKey(e: KeyEvent) {
@@ -215,6 +236,8 @@ class TextComponent(
             if (e.isShiftDown) {
                 selectionModel.updateSelection(caretModel.position)
             }
+
+            restartCaretBlinking()
         }
 
         private fun handleUpKey(e: KeyEvent) {
@@ -248,6 +271,8 @@ class TextComponent(
             if (e.isShiftDown) {
                 selectionModel.updateSelection(caretModel.position)
             }
+
+            restartCaretBlinking()
         }
 
         private fun handleDownKey(e: KeyEvent) {
@@ -334,6 +359,7 @@ class TextComponent(
                     }
                 }
             }.apply { start() }
+            restartCaretBlinking()
         }
     }
 
@@ -350,6 +376,7 @@ class TextComponent(
             }
 
             isMouseDragging = true
+            restartCaretBlinking()
             repaint()
         }
 
@@ -368,6 +395,7 @@ class TextComponent(
                 val position = getPositionFromPoint(e.point)
                 selectionModel.updateSelection(position)
                 caretModel.moveTo(position)
+                restartCaretBlinking()
                 repaint()
             }
         }
