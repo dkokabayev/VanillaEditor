@@ -1,12 +1,7 @@
 package controls.text
 
-import java.awt.Font
-import java.awt.FontMetrics
-import java.awt.Graphics
-import java.awt.event.KeyAdapter
-import java.awt.event.KeyEvent
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
+import java.awt.*
+import java.awt.event.*
 import java.io.File
 import javax.swing.JComponent
 import javax.swing.Timer
@@ -20,6 +15,7 @@ class TextComponent(
 ) : JComponent() {
 
     private val textBuffer = TextBuffer(newLineChar)
+    private val caretModel = CaretModel(textBuffer)
     private var caretVisible = true
     private val defaultFont = Font(fontName, Font.PLAIN, fontSize)
 
@@ -60,8 +56,9 @@ class TextComponent(
     }
 
     private fun getCaretCoordinates(fm: FontMetrics): Pair<Int, Int> {
-        val textBeforeCaret = textBuffer.getLines().joinToString("\n").substring(0, textBuffer.caretPosition)
-        val splitBeforeCaret = textBeforeCaret.split("\n")
+        val caretPosition = caretModel.getCurrentPosition()
+        val textBeforeCaret = textBuffer.getText().substring(0, caretPosition.offset)
+        val splitBeforeCaret = textBeforeCaret.split(newLineChar)
 
         val caretLineIndex = splitBeforeCaret.size - 1
         val currentLineText = splitBeforeCaret.lastOrNull() ?: ""
@@ -77,57 +74,57 @@ class TextComponent(
                 KeyEvent.VK_BACK_SPACE -> {
                     if (!backspacePressed) {
                         backspacePressed = true
-                        textBuffer.deleteBeforeCaret()
+                        val position = caretModel.getCurrentPosition()
+                        if (position.offset > 0) {
+                            textBuffer.deleteCharAt(position.offset - 1)
+                            caretModel.moveLeft()
+                        }
                         startBackspaceTimer()
                     }
                 }
 
-                KeyEvent.VK_DELETE -> textBuffer.deleteAtCaret()
+                KeyEvent.VK_DELETE -> {
+                    val position = caretModel.getCurrentPosition()
+                    if (position.offset < textBuffer.length) {
+                        textBuffer.deleteCharAt(position.offset)
+                    }
+                }
+
                 KeyEvent.VK_LEFT -> {
                     when {
-                        e.isControlDown || e.isMetaDown -> {
-                            val currentLine = textBuffer.getCurrentLine()
-                            textBuffer.caretPosition = currentLine.first
-                        }
-
-                        e.isAltDown -> textBuffer.moveCaretToPreviousWord()
-                        else -> textBuffer.moveCaretLeft()
+                        e.isControlDown || e.isMetaDown -> caretModel.moveToLineStart()
+                        e.isAltDown -> caretModel.moveToPreviousWord()
+                        else -> caretModel.moveLeft()
                     }
                 }
 
                 KeyEvent.VK_RIGHT -> {
                     when {
-                        e.isControlDown || e.isMetaDown -> {
-                            val currentLine = textBuffer.getCurrentLine()
-                            textBuffer.caretPosition = currentLine.first + currentLine.second.length
-                        }
-
-                        e.isAltDown -> textBuffer.moveCaretToNextWord()
-                        else -> textBuffer.moveCaretRight()
+                        e.isControlDown || e.isMetaDown -> caretModel.moveToLineEnd()
+                        e.isAltDown -> caretModel.moveToNextWord()
+                        else -> caretModel.moveRight()
                     }
                 }
 
                 KeyEvent.VK_UP -> {
                     when {
-                        e.isControlDown || e.isMetaDown -> {
-                            textBuffer.caretPosition = 0
-                        }
-
-                        e.isAltDown -> textBuffer.moveCaretUpWithOption()
+                        e.isControlDown || e.isMetaDown -> caretModel.moveToTextStart()
+                        e.isAltDown -> caretModel.moveUpWithOption()
                     }
                 }
 
                 KeyEvent.VK_DOWN -> {
                     when {
-                        e.isControlDown || e.isMetaDown -> {
-                            textBuffer.caretPosition = textBuffer.length
-                        }
-
-                        e.isAltDown -> textBuffer.moveCaretDownWithOption()
+                        e.isControlDown || e.isMetaDown -> caretModel.moveToTextEnd()
+                        e.isAltDown -> caretModel.moveDownWithOption()
                     }
                 }
 
-                KeyEvent.VK_ENTER -> textBuffer.insertChar(newLineChar)
+                KeyEvent.VK_ENTER -> {
+                    val position = caretModel.getCurrentPosition()
+                    textBuffer.insertChar(newLineChar, position.offset)
+                    caretModel.moveRight()
+                }
             }
             repaint()
         }
@@ -141,14 +138,23 @@ class TextComponent(
 
         override fun keyTyped(e: KeyEvent) {
             if (e.keyChar != KeyEvent.CHAR_UNDEFINED && !e.isControlDown && e.keyChar != newLineChar) {
-                textBuffer.insertChar(e.keyChar)
+                val position = caretModel.getCurrentPosition()
+                textBuffer.insertChar(e.keyChar, position.offset)
+                caretModel.moveRight()
                 repaint()
             }
         }
 
         private fun startBackspaceTimer() {
             backspaceTimer = Timer(backspaceRepeatRate) {
-                if (backspacePressed) textBuffer.deleteBeforeCaret()
+                if (backspacePressed) {
+                    val position = caretModel.getCurrentPosition()
+                    if (position.offset > 0) {
+                        textBuffer.deleteCharAt(position.offset - 1)
+                        caretModel.moveLeft()
+                        repaint()
+                    }
+                }
             }.apply { start() }
         }
     }
@@ -161,6 +167,7 @@ class TextComponent(
 
     fun openFile(file: File) {
         textBuffer.loadFromFile(file)
+        caretModel.moveToTextEnd()
         repaint()
     }
 
