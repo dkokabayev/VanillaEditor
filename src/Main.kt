@@ -9,6 +9,7 @@ object EditorSettings {
     val SELECTION_COLOR: Color = Color.PINK
     const val FONT_NAME = "Monospaced"
     const val FONT_SIZE = 14
+    const val PADDING = 5
     const val CARET_BLINK_RATE = 500
     const val BACKSPACE_REPEAT_RATE = 50
     const val EDITOR_WIDTH = 800
@@ -36,6 +37,7 @@ fun main() {
             newLineChar = EditorSettings.NEW_LINE_CHAR,
             fontColor = EditorSettings.FONT_COLOR,
             selectionColor = EditorSettings.SELECTION_COLOR,
+            padding = EditorSettings.PADDING,
         )
 
         // TODO: Remove these lines

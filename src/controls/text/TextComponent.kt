@@ -13,6 +13,7 @@ class TextComponent(
     private val newLineChar: Char = '\n',
     private val fontColor: Color = Color.BLACK,
     private val selectionColor: Color = Color.PINK,
+    private val padding: Int = 5,
 ) : JComponent() {
 
     private val textBuffer = TextBuffer(newLineChar)
@@ -79,13 +80,13 @@ class TextComponent(
         var y = lineHeight
         val lines = textBuffer.getLines()
         for (line in lines) {
-            g.drawString(line, 5, y)
+            g.drawString(line, padding, y)
             y += lineHeight
         }
 
         if (caretVisible) {
             val (caretX, caretY) = getCaretCoordinates(fm)
-            g.drawLine(caretX + 5, caretY - fm.ascent, caretX + 5, caretY - fm.ascent + lineHeight)
+            g.drawLine(caretX + padding, caretY - fm.ascent, caretX + padding, caretY - fm.ascent + lineHeight)
         }
     }
 
@@ -104,12 +105,12 @@ class TextComponent(
                 val selEnd = minOf(end - lineStart, line.length)
 
                 if (line.isEmpty() && selStart == 0) {
-                    g.fillRect(5, y - fm.ascent, fm.charWidth(' '), lineHeight)
+                    g.fillRect(padding, y - fm.ascent, fm.charWidth(' '), lineHeight)
                 } else {
                     val startX = fm.stringWidth(line.substring(0, selStart))
                     val width = fm.stringWidth(line.substring(selStart, selEnd))
 
-                    g.fillRect(startX + 5, y - fm.ascent, width, lineHeight)
+                    g.fillRect(startX + padding, y - fm.ascent, width, lineHeight)
                 }
             }
 
@@ -132,7 +133,7 @@ class TextComponent(
                 var totalWidth = 0
                 for (i in chars.indices) {
                     val charWidth = fm.charWidth(chars[i])
-                    if (point.x - 5 <= totalWidth + charWidth / 2) {
+                    if (point.x - padding <= totalWidth + charWidth / 2) {
                         return currentPos + i
                     }
                     totalWidth += charWidth
