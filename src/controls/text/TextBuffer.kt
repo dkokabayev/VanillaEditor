@@ -5,7 +5,6 @@ import java.io.File
 class TextBuffer(private val newLineChar: Char) {
     private val buffer = StringBuilder()
     var caretPosition = 0
-        private set
 
     fun insertChar(char: Char) {
         buffer.insert(caretPosition, char)
@@ -126,7 +125,10 @@ class TextBuffer(private val newLineChar: Char) {
         }
     }
 
-    private fun getCurrentLine(): Pair<Int, String> {
+    val length: Int
+        get() = buffer.length
+
+    fun getCurrentLine(): Pair<Int, String> {
         val text = buffer.toString()
         val lineStart = text.lastIndexOf(newLineChar, caretPosition - 1) + 1
         val lineEnd = text.indexOf(newLineChar, caretPosition).let { if (it == -1) text.length else it }

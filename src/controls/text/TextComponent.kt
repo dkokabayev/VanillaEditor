@@ -85,6 +85,11 @@ class TextComponent(
                 KeyEvent.VK_DELETE -> textBuffer.deleteAtCaret()
                 KeyEvent.VK_LEFT -> {
                     when {
+                        e.isControlDown || e.isMetaDown -> {
+                            val currentLine = textBuffer.getCurrentLine()
+                            textBuffer.caretPosition = currentLine.first
+                        }
+
                         e.isAltDown -> textBuffer.moveCaretToPreviousWord()
                         else -> textBuffer.moveCaretLeft()
                     }
@@ -92,20 +97,33 @@ class TextComponent(
 
                 KeyEvent.VK_RIGHT -> {
                     when {
+                        e.isControlDown || e.isMetaDown -> {
+                            val currentLine = textBuffer.getCurrentLine()
+                            textBuffer.caretPosition = currentLine.first + currentLine.second.length
+                        }
+
                         e.isAltDown -> textBuffer.moveCaretToNextWord()
                         else -> textBuffer.moveCaretRight()
                     }
                 }
 
                 KeyEvent.VK_UP -> {
-                    if (e.isAltDown) {
-                        textBuffer.moveCaretUpWithOption()
+                    when {
+                        e.isControlDown || e.isMetaDown -> {
+                            textBuffer.caretPosition = 0
+                        }
+
+                        e.isAltDown -> textBuffer.moveCaretUpWithOption()
                     }
                 }
 
                 KeyEvent.VK_DOWN -> {
-                    if (e.isAltDown) {
-                        textBuffer.moveCaretDownWithOption()
+                    when {
+                        e.isControlDown || e.isMetaDown -> {
+                            textBuffer.caretPosition = textBuffer.length
+                        }
+
+                        e.isAltDown -> textBuffer.moveCaretDownWithOption()
                     }
                 }
 
