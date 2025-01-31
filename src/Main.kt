@@ -1,9 +1,12 @@
 import controls.text.TextComponent
 import java.awt.BorderLayout
+import java.awt.Color
 import javax.swing.*
 import javax.swing.filechooser.FileNameExtensionFilter
 
 object EditorSettings {
+    val FONT_COLOR: Color = Color.BLACK
+    val SELECTION_COLOR: Color = Color.PINK
     const val FONT_NAME = "Monospaced"
     const val FONT_SIZE = 14
     const val CARET_BLINK_RATE = 500
@@ -31,6 +34,8 @@ fun main() {
             caretBlinkRate = EditorSettings.CARET_BLINK_RATE,
             backspaceRepeatRate = EditorSettings.BACKSPACE_REPEAT_RATE,
             newLineChar = EditorSettings.NEW_LINE_CHAR,
+            fontColor = EditorSettings.FONT_COLOR,
+            selectionColor = EditorSettings.SELECTION_COLOR,
         )
 
         frame.add(JScrollPane(textComponent), BorderLayout.CENTER)

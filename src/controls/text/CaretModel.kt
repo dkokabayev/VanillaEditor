@@ -19,6 +19,10 @@ internal class CaretModel(private val textBuffer: TextBuffer) {
         )
     }
 
+    fun moveTo(newPosition: Int) {
+        position = newPosition
+    }
+
     fun moveLeft() {
         if (position > 0) position--
     }
