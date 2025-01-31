@@ -38,6 +38,46 @@ fun main() {
             selectionColor = EditorSettings.SELECTION_COLOR,
         )
 
+        // TODO: Remove these lines
+        textComponent.text = """import java.time.*;
+
+sealed interface Vehicle permits Car {
+    record MaintenanceRecord(String type, LocalDateTime date) {}
+}
+
+non-sealed class Car implements Vehicle {
+    private sealed interface Engine permits ElectricEngine, GasEngine {
+        void start();
+    }
+    private static final class ElectricEngine implements Engine {
+        public synchronized void start() {}
+    }
+    private static final class GasEngine implements Engine {
+        public synchronized void start() {}
+    }
+}
+
+public class LargeJavaClass {
+    private volatile int counter;
+    private static final String CONSTANT = "280a03c6-6de6-4f3d-8ff4-7a73e47796bf";
+
+    public void demonstrateFeatures() {
+        record Point(int x, int y) {}
+        var point = new Point(1, 2);
+        Object obj = point;
+        if (obj instanceof Point p && p.x() > 0) {
+            System.out.println(p.y());
+        }
+        String result = switch(counter) {
+            case 1 -> "One";
+            case 2 -> {
+                yield "Two";
+            }
+            default -> "Other";
+        };
+    }
+}""";
+
         frame.add(JScrollPane(textComponent), BorderLayout.CENTER)
 
         val menuBar = JMenuBar()
