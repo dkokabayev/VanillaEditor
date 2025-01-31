@@ -24,14 +24,5 @@ internal class TextBuffer(val newLineChar: Char) {
         buffer.setLength(0)
     }
 
-    fun loadFromFile(file: File) {
-        clear()
-        buffer.append(file.readText())
-    }
-
-    fun saveToFile(file: File) {
-        file.writeText(buffer.toString())
-    }
-
     fun getLines(): List<String> = buffer.toString().split(newLineChar)
 }

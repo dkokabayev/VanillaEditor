@@ -49,7 +49,7 @@ fun main() {
                 chooser.fileFilter =
                     FileNameExtensionFilter(EditorSettings.FILE_FILTER_DESCRIPTION, EditorSettings.FILE_EXTENSION)
                 if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
-                    textComponent.openFile(chooser.selectedFile)
+                    textComponent.text = chooser.selectedFile.readText()
                 }
             }
         }
@@ -60,7 +60,7 @@ fun main() {
                 chooser.fileFilter =
                     FileNameExtensionFilter(EditorSettings.FILE_FILTER_DESCRIPTION, EditorSettings.FILE_EXTENSION)
                 if (chooser.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
-                    textComponent.saveFile(chooser.selectedFile)
+                    chooser.selectedFile.writeText(textComponent.text)
                 }
             }
         }

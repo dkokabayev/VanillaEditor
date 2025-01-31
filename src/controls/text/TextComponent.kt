@@ -2,7 +2,6 @@ package controls.text
 
 import java.awt.*
 import java.awt.event.*
-import java.io.File
 import javax.swing.JComponent
 import javax.swing.Timer
 
@@ -38,6 +37,18 @@ class TextComponent(
             repaint()
         }.start()
     }
+
+    var text: String
+        get() = textBuffer.getText()
+        set(value) {
+            textBuffer.clear()
+            value.forEach { char ->
+                textBuffer.insertChar(char, textBuffer.length)
+            }
+            caretModel.moveToTextEnd()
+            selectionModel.clearSelection()
+            repaint()
+        }
 
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
@@ -360,15 +371,5 @@ class TextComponent(
                 repaint()
             }
         }
-    }
-
-    fun openFile(file: File) {
-        textBuffer.loadFromFile(file)
-        caretModel.moveToTextEnd()
-        repaint()
-    }
-
-    fun saveFile(file: File) {
-        textBuffer.saveToFile(file)
     }
 }
