@@ -176,6 +176,12 @@ class TextComponent(
                 KeyEvent.VK_UP -> handleUpKey(e)
                 KeyEvent.VK_DOWN -> handleDownKey(e)
                 KeyEvent.VK_ENTER -> handleEnter()
+                KeyEvent.VK_HOME -> caretModel.moveToTextStart()
+                KeyEvent.VK_END -> caretModel.moveToTextEnd()
+                //TODO: KeyEvent.VK_PAGE_UP. Implement scrolling and clipping first
+                KeyEvent.VK_PAGE_UP -> throw NotImplementedError()
+                //TODO: KeyEvent.VK_PAGE_DOWN. Implement scrolling and clipping first
+                KeyEvent.VK_PAGE_DOWN -> throw NotImplementedError()
             }
             repaint()
         }
