@@ -10,13 +10,15 @@ internal class SelectionModel(private val textBuffer: TextBuffer) {
         get() = selectionStart != -1 && selectionEnd != -1
 
     fun startSelection(position: Int) {
-        selectionStart = position
-        selectionEnd = position
+        selectionStart = position.coerceIn(0, textBuffer.length)
+        selectionEnd = selectionStart
     }
 
     fun updateSelection(position: Int) {
         if (selectionStart != -1) {
             selectionEnd = position.coerceIn(0, textBuffer.length)
+        } else {
+            startSelection(position)
         }
     }
 

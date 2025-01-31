@@ -171,7 +171,11 @@ class TextComponent(
         }
 
         private fun handleLeftKey(e: KeyEvent) {
-            val oldPosition = caretModel.position
+            if (!e.isShiftDown) {
+                selectionModel.clearSelection()
+            } else if (!selectionModel.hasSelection) {
+                selectionModel.startSelection(caretModel.position)
+            }
 
             when {
                 e.isControlDown || e.isMetaDown -> caretModel.moveToLineStart()
@@ -180,17 +184,16 @@ class TextComponent(
             }
 
             if (e.isShiftDown) {
-                if (!selectionModel.hasSelection) {
-                    selectionModel.startSelection(oldPosition)
-                }
                 selectionModel.updateSelection(caretModel.position)
-            } else {
-                selectionModel.clearSelection()
             }
         }
 
         private fun handleRightKey(e: KeyEvent) {
-            val oldPosition = caretModel.position
+            if (!e.isShiftDown) {
+                selectionModel.clearSelection()
+            } else if (!selectionModel.hasSelection) {
+                selectionModel.startSelection(caretModel.position)
+            }
 
             when {
                 e.isControlDown || e.isMetaDown -> caretModel.moveToLineEnd()
@@ -199,48 +202,75 @@ class TextComponent(
             }
 
             if (e.isShiftDown) {
-                if (!selectionModel.hasSelection) {
-                    selectionModel.startSelection(oldPosition)
-                }
                 selectionModel.updateSelection(caretModel.position)
-            } else {
-                selectionModel.clearSelection()
             }
         }
 
         private fun handleUpKey(e: KeyEvent) {
-            val oldPosition = caretModel.position
+            if (!e.isShiftDown) {
+                selectionModel.clearSelection()
+            } else if (!selectionModel.hasSelection) {
+                selectionModel.startSelection(caretModel.position)
+            }
 
-            when {
-                e.isControlDown || e.isMetaDown -> caretModel.moveToTextStart()
-                e.isAltDown -> caretModel.moveUpWithOption()
+            val currentCaretPosition = caretModel.getCurrentPosition()
+            val columnOffset = currentCaretPosition.offset - currentCaretPosition.lineStart
+
+            if (currentCaretPosition.lineStart > 0) {
+                val prevLineEnd = currentCaretPosition.lineStart - 1
+                val prevLineStart = textBuffer.getText().lastIndexOf(newLineChar, prevLineEnd - 1) + 1
+                val prevLineLength = prevLineEnd - prevLineStart
+
+                val newPosition = when {
+                    e.isControlDown || e.isMetaDown -> 0
+                    else -> {
+                        val newOffset = minOf(columnOffset, prevLineLength)
+                        prevLineStart + newOffset
+                    }
+                }
+
+                caretModel.moveTo(newPosition)
+            } else if (e.isControlDown || e.isMetaDown) {
+                caretModel.moveToTextStart()
             }
 
             if (e.isShiftDown) {
-                if (!selectionModel.hasSelection) {
-                    selectionModel.startSelection(oldPosition)
-                }
                 selectionModel.updateSelection(caretModel.position)
-            } else {
-                selectionModel.clearSelection()
             }
         }
 
         private fun handleDownKey(e: KeyEvent) {
-            val oldPosition = caretModel.position
+            if (!e.isShiftDown) {
+                selectionModel.clearSelection()
+            } else if (!selectionModel.hasSelection) {
+                selectionModel.startSelection(caretModel.position)
+            }
 
-            when {
-                e.isControlDown || e.isMetaDown -> caretModel.moveToTextEnd()
-                e.isAltDown -> caretModel.moveDownWithOption()
+            val currentCaretPosition = caretModel.getCurrentPosition()
+            val columnOffset = currentCaretPosition.offset - currentCaretPosition.lineStart
+
+            if (currentCaretPosition.lineEnd < textBuffer.length) {
+                val nextLineStart = currentCaretPosition.lineEnd + 1
+                val nextLineEnd = textBuffer.getText().indexOf(newLineChar, nextLineStart).let {
+                    if (it == -1) textBuffer.length else it
+                }
+                val nextLineLength = nextLineEnd - nextLineStart
+
+                val newPosition = when {
+                    e.isControlDown || e.isMetaDown -> textBuffer.length
+                    else -> {
+                        val newOffset = minOf(columnOffset, nextLineLength)
+                        nextLineStart + newOffset
+                    }
+                }
+
+                caretModel.moveTo(newPosition)
+            } else if (e.isControlDown || e.isMetaDown) {
+                caretModel.moveToTextEnd()
             }
 
             if (e.isShiftDown) {
-                if (!selectionModel.hasSelection) {
-                    selectionModel.startSelection(oldPosition)
-                }
                 selectionModel.updateSelection(caretModel.position)
-            } else {
-                selectionModel.clearSelection()
             }
         }
 
