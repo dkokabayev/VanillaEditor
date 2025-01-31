@@ -103,10 +103,14 @@ class TextComponent(
                 val selStart = maxOf(start - lineStart, 0)
                 val selEnd = minOf(end - lineStart, line.length)
 
-                val startX = fm.stringWidth(line.substring(0, selStart))
-                val width = fm.stringWidth(line.substring(selStart, selEnd))
+                if (line.isEmpty() && selStart == 0) {
+                    g.fillRect(5, y - fm.ascent, fm.charWidth(' '), lineHeight)
+                } else {
+                    val startX = fm.stringWidth(line.substring(0, selStart))
+                    val width = fm.stringWidth(line.substring(selStart, selEnd))
 
-                g.fillRect(startX + 5, y - fm.ascent, width, lineHeight)
+                    g.fillRect(startX + 5, y - fm.ascent, width, lineHeight)
+                }
             }
 
             currentPos = lineEnd + 1
