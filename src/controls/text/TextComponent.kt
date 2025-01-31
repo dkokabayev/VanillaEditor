@@ -182,8 +182,18 @@ class TextComponent(
                 KeyEvent.VK_PAGE_UP -> throw NotImplementedError()
                 //TODO: KeyEvent.VK_PAGE_DOWN. Implement scrolling and clipping first
                 KeyEvent.VK_PAGE_DOWN -> throw NotImplementedError()
+                KeyEvent.VK_A -> handleAKey(e)
             }
             repaint()
+        }
+
+        private fun handleAKey(e: KeyEvent) {
+            if (e.isControlDown || e.isMetaDown) {
+                selectionModel.startSelection(0)
+                selectionModel.updateSelection(textBuffer.length)
+                caretModel.moveTo(textBuffer.length)
+                repaint()
+            }
         }
 
         private fun handleBackspace() {
