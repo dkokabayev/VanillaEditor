@@ -11,7 +11,7 @@ object EditorSettings {
     const val FONT_SIZE = 14
     const val PADDING = 5
     const val CARET_BLINK_RATE = 500
-    const val BACKSPACE_REPEAT_RATE = 50
+    const val BACKSPACE_INITIAL_REPEAT_RATE = 250
     const val EDITOR_WIDTH = 800
     const val EDITOR_HEIGHT = 600
     const val FRAME_TITLE = "Vanilla Editor"
@@ -33,7 +33,7 @@ fun main() {
             fontName = EditorSettings.FONT_NAME,
             fontSize = EditorSettings.FONT_SIZE,
             caretBlinkRate = EditorSettings.CARET_BLINK_RATE,
-            backspaceRepeatRate = EditorSettings.BACKSPACE_REPEAT_RATE,
+            backspaceInitialRepeatRate = EditorSettings.BACKSPACE_INITIAL_REPEAT_RATE,
             newLineChar = EditorSettings.NEW_LINE_CHAR,
             fontColor = EditorSettings.FONT_COLOR,
             selectionColor = EditorSettings.SELECTION_COLOR,

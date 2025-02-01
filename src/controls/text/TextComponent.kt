@@ -13,7 +13,9 @@ class TextComponent(
     fontName: String = "Monospaced",
     fontSize: Int = 14,
     caretBlinkRate: Int = 500,
-    private val backspaceRepeatRate: Int = 50,
+    private val backspaceInitialRepeatRate: Int = 250,
+    private val backspaceAccelerationFactor: Double = 0.8,
+    private val backspaceRepeatMinRate: Int = 1,
     private val newLineChar: Char = '\n',
     private val fontColor: Color = Color.BLACK,
     private val selectionColor: Color = Color.PINK,
@@ -28,6 +30,7 @@ class TextComponent(
 
     private var backspacePressed = false
     private var backspaceTimer: Timer? = null
+    private var backspacePressStartTime: Long = 0
     private var isMouseDragging = false
 
     init {
@@ -252,10 +255,16 @@ class TextComponent(
                 deleteSelectedText()
             } else if (!backspacePressed) {
                 backspacePressed = true
-                val position = caretModel.getCurrentPosition()
-                if (position.offset > 0) {
-                    textBuffer.deleteCharAt(position.offset - 1)
-                    caretModel.moveLeft()
+                backspacePressStartTime = System.currentTimeMillis()
+                if (selectionModel.hasSelection) {
+                    deleteSelectedText()
+                    selectionModel.clearSelection()
+                } else {
+                    val position = caretModel.getCurrentPosition()
+                    if (position.offset > 0) {
+                        textBuffer.deleteCharAt(position.offset - 1)
+                        caretModel.moveLeft()
+                    }
                 }
                 startBackspaceTimer()
             }
@@ -405,11 +414,12 @@ class TextComponent(
             if (e.keyCode == KeyEvent.VK_BACK_SPACE) {
                 backspacePressed = false
                 backspaceTimer?.stop()
+                backspaceTimer = null
             }
         }
 
         override fun keyTyped(e: KeyEvent) {
-            if (e.keyChar != KeyEvent.CHAR_UNDEFINED && !e.isControlDown && e.keyChar != newLineChar) {
+            if (e.keyChar != KeyEvent.CHAR_UNDEFINED && e.keyChar != '\b' && !(e.isControlDown || e.isMetaDown) && e.keyChar != newLineChar) {
                 if (selectionModel.hasSelection) {
                     deleteSelectedText()
                 }
@@ -420,15 +430,29 @@ class TextComponent(
             }
         }
 
+        private fun calculateCurrentDelay(): Int {
+            val elapsedTime = System.currentTimeMillis() - backspacePressStartTime
+            val factor = Math.exp(-backspaceAccelerationFactor * elapsedTime / 1000.0)
+            val currentRate = (backspaceInitialRepeatRate * factor + backspaceRepeatMinRate).toInt()
+            return currentRate.coerceIn(backspaceRepeatMinRate, backspaceInitialRepeatRate)
+        }
+
         private fun startBackspaceTimer() {
-            backspaceTimer = Timer(backspaceRepeatRate) {
+            backspaceTimer?.stop()
+            backspaceTimer = Timer(backspaceInitialRepeatRate) {
                 if (backspacePressed) {
                     val position = caretModel.getCurrentPosition()
                     if (position.offset > 0) {
                         textBuffer.deleteCharAt(position.offset - 1)
                         caretModel.moveLeft()
                         repaint()
+
+                        val currentDelay = calculateCurrentDelay()
+                        backspaceTimer?.delay = currentDelay
                     }
+                } else {
+                    backspaceTimer?.stop()
+                    backspaceTimer = null
                 }
             }.apply { start() }
             restartCaretBlinking()
