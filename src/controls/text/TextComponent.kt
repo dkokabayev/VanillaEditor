@@ -213,6 +213,7 @@ class TextComponent(
                             insertOffset++
                         }
 
+                        caretModel.moveTo(insertOffset)
                         repaint()
                     }
                 } catch (e: Exception) {
