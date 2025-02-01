@@ -184,8 +184,20 @@ class TextComponent(
                 KeyEvent.VK_PAGE_DOWN -> throw NotImplementedError()
                 KeyEvent.VK_A -> handleAKey(e)
                 KeyEvent.VK_C -> handleCopy(e)
+                KeyEvent.VK_X -> handleCut(e)
             }
             repaint()
+        }
+
+        private fun handleCut(e: KeyEvent) {
+            if ((e.isControlDown || e.isMetaDown) && selectionModel.hasSelection) {
+                val selectedText = selectionModel.getSelectedText()
+                val stringSelection = StringSelection(selectedText)
+                val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+                clipboard.setContents(stringSelection, null)
+                deleteSelectedText()
+                repaint()
+            }
         }
 
         private fun handleCopy(e: KeyEvent) {
