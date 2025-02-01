@@ -7,6 +7,8 @@ import java.awt.event.*
 import javax.swing.JComponent
 import javax.swing.Timer
 
+private const val MULTI_CLICK_TIMEOUT_MS = 500
+
 class TextComponent(
     fontName: String = "Monospaced",
     fontSize: Int = 14,
@@ -434,15 +436,43 @@ class TextComponent(
     }
 
     private inner class TextMouseListener : MouseAdapter() {
+        private var lastClickTime = 0L
+        private var clickCount = 0
+
         override fun mousePressed(e: MouseEvent) {
             requestFocusInWindow()
             val position = getPositionFromPoint(e.point)
 
-            if (e.isShiftDown && selectionModel.hasSelection) {
-                selectionModel.updateSelection(position)
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - lastClickTime > MULTI_CLICK_TIMEOUT_MS) {
+                clickCount = 1
             } else {
-                caretModel.moveTo(position)
-                selectionModel.startSelection(position)
+                clickCount++
+            }
+
+            lastClickTime = currentTime
+
+            when (clickCount) {
+                1 -> {
+                    if (e.isShiftDown && selectionModel.hasSelection) {
+                        selectionModel.updateSelection(position)
+                    } else {
+                        caretModel.moveTo(position)
+                        selectionModel.startSelection(position)
+                    }
+                }
+
+                2 -> {
+                    val (_, wordEnd) = selectionModel.selectWord(position)
+                    caretModel.moveTo(wordEnd)
+                }
+
+                3 -> {
+                    val caretPosition = caretModel.getCurrentPosition()
+                    selectionModel.selectLine(caretPosition.lineStart, caretPosition.lineEnd)
+                    caretModel.moveTo(caretPosition.lineEnd)
+                    clickCount = 0
+                }
             }
 
             isMouseDragging = true
@@ -452,7 +482,7 @@ class TextComponent(
 
         override fun mouseReleased(e: MouseEvent) {
             isMouseDragging = false
-            if (selectionModel.selectionStart == selectionModel.selectionEnd && !e.isShiftDown) {
+            if (clickCount == 1 && selectionModel.selectionStart == selectionModel.selectionEnd && !e.isShiftDown) {
                 selectionModel.clearSelection()
             }
             repaint()

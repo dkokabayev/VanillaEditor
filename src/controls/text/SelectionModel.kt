@@ -41,4 +41,34 @@ internal class SelectionModel(private val textBuffer: TextBuffer) {
             maxOf(selectionStart, selectionEnd)
         )
     }
+
+    fun selectWord(position: Int): Pair<Int, Int> {
+        val text = textBuffer.getText()
+        if (text.isEmpty()) {
+            return Pair(0, 0).also {
+                startSelection(it.first)
+                updateSelection(it.second)
+            }
+        }
+
+        var wordStart = position
+        while (wordStart > 0 && !text[wordStart - 1].isWhitespace()) {
+            wordStart--
+        }
+
+        var wordEnd = position
+        while (wordEnd < text.length && !text[wordEnd].isWhitespace()) {
+            wordEnd++
+        }
+
+        return Pair(wordStart, wordEnd).also {
+            startSelection(it.first)
+            updateSelection(it.second)
+        }
+    }
+
+    fun selectLine(lineStart: Int, lineEnd: Int) {
+        startSelection(lineStart)
+        updateSelection(lineEnd)
+    }
 }
