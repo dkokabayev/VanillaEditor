@@ -329,10 +329,10 @@ class TextComponent(
             }
 
             val currentCaretPosition = caretModel.getCurrentPosition()
-            val columnOffset = currentCaretPosition.offset - currentCaretPosition.lineStart
+            val columnOffset = currentCaretPosition.offset - currentCaretPosition.start
 
-            if (currentCaretPosition.lineStart > 0) {
-                val prevLineEnd = currentCaretPosition.lineStart - 1
+            if (currentCaretPosition.start > 0) {
+                val prevLineEnd = currentCaretPosition.start - 1
                 val prevLineStart = textBuffer.getText().lastIndexOf(newLineChar, prevLineEnd - 1) + 1
                 val prevLineLength = prevLineEnd - prevLineStart
 
@@ -364,10 +364,10 @@ class TextComponent(
             }
 
             val currentCaretPosition = caretModel.getCurrentPosition()
-            val columnOffset = currentCaretPosition.offset - currentCaretPosition.lineStart
+            val columnOffset = currentCaretPosition.offset - currentCaretPosition.start
 
-            if (currentCaretPosition.lineEnd < textBuffer.length) {
-                val nextLineStart = currentCaretPosition.lineEnd + 1
+            if (currentCaretPosition.end < textBuffer.length) {
+                val nextLineStart = currentCaretPosition.end + 1
                 val nextLineEnd = textBuffer.getText().indexOf(newLineChar, nextLineStart).let {
                     if (it == -1) textBuffer.length else it
                 }
@@ -493,8 +493,8 @@ class TextComponent(
 
                 3 -> {
                     val caretPosition = caretModel.getCurrentPosition()
-                    selectionModel.selectLine(caretPosition.lineStart, caretPosition.lineEnd)
-                    caretModel.moveTo(caretPosition.lineEnd)
+                    selectionModel.selectLine(caretPosition.start, caretPosition.end)
+                    caretModel.moveTo(caretPosition.end)
                     clickCount = 0
                 }
             }

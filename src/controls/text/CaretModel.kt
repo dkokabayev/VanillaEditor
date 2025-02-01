@@ -13,9 +13,9 @@ internal class CaretModel(private val textBuffer: TextBuffer) {
 
         return CaretPosition(
             offset = position,
-            lineStart = lineStart,
-            lineEnd = lineEnd,
-            lineText = text.substring(lineStart, lineEnd)
+            start = lineStart,
+            end = lineEnd,
+            text = text.substring(lineStart, lineEnd)
         )
     }
 
@@ -90,11 +90,11 @@ internal class CaretModel(private val textBuffer: TextBuffer) {
     }
 
     fun moveToLineStart() {
-        position = getCurrentPosition().lineStart
+        position = getCurrentPosition().start
     }
 
     fun moveToLineEnd() {
-        position = getCurrentPosition().lineEnd
+        position = getCurrentPosition().end
     }
 
     fun moveToTextStart() {
@@ -108,13 +108,13 @@ internal class CaretModel(private val textBuffer: TextBuffer) {
     fun moveUpWithOption() {
         val currentPos = getCurrentPosition()
 
-        if (position > currentPos.lineStart) {
-            position = currentPos.lineStart
+        if (position > currentPos.start) {
+            position = currentPos.start
             return
         }
 
-        if (currentPos.lineStart > 0) {
-            val previousLineEnd = currentPos.lineStart - 1
+        if (currentPos.start > 0) {
+            val previousLineEnd = currentPos.start - 1
             val previousLineStart = textBuffer.getText().lastIndexOf(textBuffer.newLineChar, previousLineEnd - 1) + 1
             position = previousLineStart
         }
@@ -123,13 +123,13 @@ internal class CaretModel(private val textBuffer: TextBuffer) {
     fun moveDownWithOption() {
         val currentPos = getCurrentPosition()
 
-        if (position < currentPos.lineEnd) {
-            position = currentPos.lineEnd
+        if (position < currentPos.end) {
+            position = currentPos.end
             return
         }
 
-        if (currentPos.lineEnd < textBuffer.length) {
-            val nextLineStart = currentPos.lineEnd + 1
+        if (currentPos.end < textBuffer.length) {
+            val nextLineStart = currentPos.end + 1
             val nextLineEnd = textBuffer.getText().indexOf(textBuffer.newLineChar, nextLineStart).let {
                 if (it == -1) textBuffer.length else it
             }
