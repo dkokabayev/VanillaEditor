@@ -183,8 +183,18 @@ class TextComponent(
                 //TODO: KeyEvent.VK_PAGE_DOWN. Implement scrolling and clipping first
                 KeyEvent.VK_PAGE_DOWN -> throw NotImplementedError()
                 KeyEvent.VK_A -> handleAKey(e)
+                KeyEvent.VK_C -> handleCopy(e)
             }
             repaint()
+        }
+
+        private fun handleCopy(e: KeyEvent) {
+            if ((e.isControlDown || e.isMetaDown) && selectionModel.hasSelection) {
+                val selectedText = selectionModel.getSelectedText()
+                val stringSelection = StringSelection(selectedText)
+                val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+                clipboard.setContents(stringSelection, null)
+            }
         }
 
         private fun handleAKey(e: KeyEvent) {
