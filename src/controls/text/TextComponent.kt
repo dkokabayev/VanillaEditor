@@ -1,6 +1,8 @@
 package controls.text
 
 import java.awt.*
+import java.awt.datatransfer.DataFlavor
+import java.awt.datatransfer.StringSelection
 import java.awt.event.*
 import javax.swing.JComponent
 import javax.swing.Timer
@@ -185,8 +187,33 @@ class TextComponent(
                 KeyEvent.VK_A -> handleAKey(e)
                 KeyEvent.VK_C -> handleCopy(e)
                 KeyEvent.VK_X -> handleCut(e)
+                KeyEvent.VK_V -> handlePaste(e)
             }
             repaint()
+        }
+
+        private fun handlePaste(e: KeyEvent) {
+            if (e.isControlDown || e.isMetaDown) {
+                try {
+                    val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+                    val data = clipboard.getData(DataFlavor.stringFlavor) as? String
+                    if (data != null) {
+                        if (selectionModel.hasSelection) {
+                            deleteSelectedText()
+                        }
+                        val position = caretModel.getCurrentPosition()
+                        var insertOffset = position.offset
+                        data.forEach { char ->
+                            textBuffer.insertChar(char, insertOffset)
+                            insertOffset++
+                        }
+
+                        repaint()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
 
         private fun handleCut(e: KeyEvent) {
