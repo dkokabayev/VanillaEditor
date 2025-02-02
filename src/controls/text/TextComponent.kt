@@ -6,24 +6,25 @@ import java.awt.datatransfer.StringSelection
 import java.awt.event.*
 import javax.swing.JComponent
 import javax.swing.Timer
+import kotlin.math.exp
 
 private const val MULTI_CLICK_TIMEOUT_MS = 500
 
-class TextComponent(
-    fontName: String = "Monospaced",
-    fontSize: Int = 14,
-    caretBlinkRate: Int = 500,
-    private val backspaceInitialRepeatRate: Int = 250,
-    private val backspaceAccelerationFactor: Double = 0.8,
-    private val backspaceRepeatMinRate: Int = 1,
-    private val newLineChar: Char = '\n',
-    private val fontColor: Color = Color.BLACK,
-    private val selectionColor: Color = Color.PINK,
-    private val padding: Int = 5,
+abstract class TextComponent(
+    fontName: String,
+    fontSize: Int,
+    caretBlinkRate: Int,
+    private val backspaceInitialRepeatRate: Int,
+    private val backspaceAccelerationFactor: Double,
+    private val backspaceRepeatMinRate: Int,
+    private val newLineChar: Char,
+    private val fontColor: Color,
+    private val selectionColor: Color,
+    private val padding: Int,
 ) : JComponent() {
 
-    private val textBuffer = TextBuffer(newLineChar)
-    private val caretModel = CaretModel(textBuffer)
+    internal val textBuffer = TextBuffer(newLineChar)
+    internal val caretModel = CaretModel(textBuffer)
     private val selectionModel = SelectionModel(textBuffer)
     private val undoManager = UndoManager()
     private var caretVisible = true
@@ -36,9 +37,9 @@ class TextComponent(
 
     init {
         font = Font(fontName, Font.PLAIN, fontSize)
-        addKeyListener(TextKeyListener())
-        addMouseListener(TextMouseListener())
-        addMouseMotionListener(TextMouseMotionListener())
+        this.addKeyListener(TextKeyListener())
+        this.addMouseListener(TextMouseListener())
+        this.addMouseMotionListener(TextMouseMotionListener())
         isFocusable = true
         focusTraversalKeysEnabled = false
 
@@ -60,8 +61,13 @@ class TextComponent(
             }
             caretModel.moveToTextEnd()
             selectionModel.clearSelection()
+            onTextChanged();
+            ensureCaretVisible()
             repaint()
         }
+
+    abstract fun onTextChanged()
+    abstract fun ensureCaretVisible()
 
     override fun addNotify() {
         super.addNotify()
@@ -128,7 +134,7 @@ class TextComponent(
         }
     }
 
-    private fun getPositionFromPoint(point: Point): Int {
+    protected open fun getPositionFromPoint(point: Point): Int {
         val fm = getFontMetrics(font)
         val lineHeight = fm.ascent + fm.descent
         val clickY = point.y
@@ -198,6 +204,8 @@ class TextComponent(
                 KeyEvent.VK_Z -> handleUndo(e)
                 KeyEvent.VK_Y -> handleRedo(e)
             }
+
+            ensureCaretVisible()
             repaint()
         }
 
@@ -284,6 +292,7 @@ class TextComponent(
                 repaint()
             }
         }
+
         private fun handleBackspace() {
             if (selectionModel.hasSelection) {
                 val selectedText = selectionModel.getSelectedText()
@@ -471,13 +480,14 @@ class TextComponent(
                 textBuffer.insertChar(e.keyChar, position.offset)
                 undoManager.addEdit(TextAction.Insert(position.offset, e.keyChar.toString(), position.offset))
                 caretModel.moveRight()
+                ensureCaretVisible()
                 repaint()
             }
         }
 
         private fun calculateCurrentDelay(): Int {
             val elapsedTime = System.currentTimeMillis() - backspacePressStartTime
-            val factor = Math.exp(-backspaceAccelerationFactor * elapsedTime / 1000.0)
+            val factor = exp(-backspaceAccelerationFactor * elapsedTime / 1000.0)
             val currentRate = (backspaceInitialRepeatRate * factor + backspaceRepeatMinRate).toInt()
             return currentRate.coerceIn(backspaceRepeatMinRate, backspaceInitialRepeatRate)
         }
@@ -546,6 +556,7 @@ class TextComponent(
 
             isMouseDragging = true
             restartCaretBlinking()
+            ensureCaretVisible()
             repaint()
         }
 
@@ -565,6 +576,7 @@ class TextComponent(
                 selectionModel.updateSelection(position)
                 caretModel.moveTo(position)
                 restartCaretBlinking()
+                ensureCaretVisible()
                 repaint()
             }
         }

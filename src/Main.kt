@@ -1,4 +1,4 @@
-import controls.text.TextComponent
+import controls.text.TextArea
 import java.awt.BorderLayout
 import java.awt.Color
 import javax.swing.*
@@ -29,7 +29,7 @@ fun main() {
         frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         frame.setSize(EditorSettings.EDITOR_WIDTH, EditorSettings.EDITOR_HEIGHT)
 
-        val textComponent = TextComponent(
+        val textComponent = TextArea(
             fontName = EditorSettings.FONT_NAME,
             fontSize = EditorSettings.FONT_SIZE,
             caretBlinkRate = EditorSettings.CARET_BLINK_RATE,
