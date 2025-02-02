@@ -25,6 +25,7 @@ class TextComponent(
     private val textBuffer = TextBuffer(newLineChar)
     private val caretModel = CaretModel(textBuffer)
     private val selectionModel = SelectionModel(textBuffer)
+    private val undoManager = UndoManager()
     private var caretVisible = true
     private val caretBlinkTimer: Timer
 
@@ -52,6 +53,7 @@ class TextComponent(
     var text: String
         get() = textBuffer.getText()
         set(value) {
+            undoManager.clear()
             textBuffer.clear()
             value.forEach { char ->
                 textBuffer.insertChar(char, textBuffer.length)
@@ -193,8 +195,28 @@ class TextComponent(
                 KeyEvent.VK_C -> handleCopy(e)
                 KeyEvent.VK_X -> handleCut(e)
                 KeyEvent.VK_V -> handlePaste(e)
+                KeyEvent.VK_Z -> handleUndo(e)
+                KeyEvent.VK_Y -> handleRedo(e)
             }
             repaint()
+        }
+
+        private fun handleUndo(e: KeyEvent) {
+            if (e.isControlDown || e.isMetaDown) {
+                if (undoManager.undo(textBuffer, caretModel)) {
+                    selectionModel.clearSelection()
+                    repaint()
+                }
+            }
+        }
+
+        private fun handleRedo(e: KeyEvent) {
+            if (e.isControlDown || e.isMetaDown) {
+                if (undoManager.redo(textBuffer, caretModel)) {
+                    selectionModel.clearSelection()
+                    repaint()
+                }
+            }
         }
 
         private fun handlePaste(e: KeyEvent) {
@@ -203,10 +225,16 @@ class TextComponent(
                     val clipboard = Toolkit.getDefaultToolkit().systemClipboard
                     val data = clipboard.getData(DataFlavor.stringFlavor) as? String
                     if (data != null) {
+                        val position = caretModel.getCurrentPosition()
                         if (selectionModel.hasSelection) {
+                            val selectedText = selectionModel.getSelectedText()
+                            val selectionStart = minOf(selectionModel.selectionStart, selectionModel.selectionEnd)
+                            undoManager.addEdit(TextAction.Delete(selectionStart, selectedText, position.offset))
                             deleteSelectedText()
                         }
-                        val position = caretModel.getCurrentPosition()
+
+                        undoManager.addEdit(TextAction.Insert(position.offset, data, position.offset))
+
                         var insertOffset = position.offset
                         data.forEach { char ->
                             textBuffer.insertChar(char, insertOffset)
@@ -225,9 +253,15 @@ class TextComponent(
         private fun handleCut(e: KeyEvent) {
             if ((e.isControlDown || e.isMetaDown) && selectionModel.hasSelection) {
                 val selectedText = selectionModel.getSelectedText()
+
                 val stringSelection = StringSelection(selectedText)
                 val clipboard = Toolkit.getDefaultToolkit().systemClipboard
                 clipboard.setContents(stringSelection, null)
+
+                val selectionStart = minOf(selectionModel.selectionStart, selectionModel.selectionEnd)
+                val position = caretModel.getCurrentPosition()
+                undoManager.addEdit(TextAction.Delete(selectionStart, selectedText, position.offset))
+
                 deleteSelectedText()
                 repaint()
             }
@@ -250,33 +284,38 @@ class TextComponent(
                 repaint()
             }
         }
-
         private fun handleBackspace() {
             if (selectionModel.hasSelection) {
+                val selectedText = selectionModel.getSelectedText()
+                val selectionStart = minOf(selectionModel.selectionStart, selectionModel.selectionEnd)
+                val position = caretModel.getCurrentPosition()
+                undoManager.addEdit(TextAction.Delete(selectionStart, selectedText, position.offset))
                 deleteSelectedText()
             } else if (!backspacePressed) {
                 backspacePressed = true
                 backspacePressStartTime = System.currentTimeMillis()
-                if (selectionModel.hasSelection) {
-                    deleteSelectedText()
-                    selectionModel.clearSelection()
-                } else {
-                    val position = caretModel.getCurrentPosition()
-                    if (position.offset > 0) {
-                        textBuffer.deleteCharAt(position.offset - 1)
-                        caretModel.moveLeft()
-                    }
+                val position = caretModel.getCurrentPosition()
+                if (position.offset > 0) {
+                    val deletedChar = textBuffer.charAt(position.offset - 1)
+                    undoManager.addEdit(TextAction.Delete(position.offset - 1, deletedChar.toString(), position.offset))
+                    textBuffer.deleteCharAt(position.offset - 1)
+                    caretModel.moveLeft()
                 }
                 startBackspaceTimer()
             }
         }
 
         private fun handleDelete() {
+            val position = caretModel.getCurrentPosition()
             if (selectionModel.hasSelection) {
+                val selectedText = selectionModel.getSelectedText()
+                val selectionStart = minOf(selectionModel.selectionStart, selectionModel.selectionEnd)
+                undoManager.addEdit(TextAction.Delete(selectionStart, selectedText, position.offset))
                 deleteSelectedText()
             } else {
-                val position = caretModel.getCurrentPosition()
                 if (position.offset < textBuffer.length) {
+                    val deletedChar = textBuffer.charAt(position.offset)
+                    undoManager.addEdit(TextAction.Delete(position.offset, deletedChar.toString(), position.offset))
                     textBuffer.deleteCharAt(position.offset)
                 }
             }
@@ -421,11 +460,16 @@ class TextComponent(
 
         override fun keyTyped(e: KeyEvent) {
             if (e.keyChar != KeyEvent.CHAR_UNDEFINED && e.keyChar != '\b' && !(e.isControlDown || e.isMetaDown) && e.keyChar != newLineChar) {
+                val position = caretModel.getCurrentPosition()
                 if (selectionModel.hasSelection) {
+                    val selectedText = selectionModel.getSelectedText()
+                    val selectionStart = minOf(selectionModel.selectionStart, selectionModel.selectionEnd)
+                    undoManager.addEdit(TextAction.Delete(selectionStart, selectedText, position.offset))
                     deleteSelectedText()
                 }
-                val position = caretModel.getCurrentPosition()
+
                 textBuffer.insertChar(e.keyChar, position.offset)
+                undoManager.addEdit(TextAction.Insert(position.offset, e.keyChar.toString(), position.offset))
                 caretModel.moveRight()
                 repaint()
             }
