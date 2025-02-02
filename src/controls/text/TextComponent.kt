@@ -193,10 +193,8 @@ abstract class TextComponent(
                 KeyEvent.VK_ENTER -> handleEnter()
                 KeyEvent.VK_HOME -> caretModel.moveToTextStart()
                 KeyEvent.VK_END -> caretModel.moveToTextEnd()
-                //TODO: KeyEvent.VK_PAGE_UP. Implement scrolling and clipping first
-                KeyEvent.VK_PAGE_UP -> throw NotImplementedError()
-                //TODO: KeyEvent.VK_PAGE_DOWN. Implement scrolling and clipping first
-                KeyEvent.VK_PAGE_DOWN -> throw NotImplementedError()
+                KeyEvent.VK_PAGE_UP -> handlePageUp(e)
+                KeyEvent.VK_PAGE_DOWN -> handlePageDown(e)
                 KeyEvent.VK_A -> handleAKey(e)
                 KeyEvent.VK_C -> handleCopy(e)
                 KeyEvent.VK_X -> handleCut(e)
@@ -207,6 +205,44 @@ abstract class TextComponent(
 
             ensureCaretVisible()
             repaint()
+        }
+
+        private fun handlePageUp(e: KeyEvent) {
+            if (!e.isShiftDown) {
+                selectionModel.clearSelection()
+            } else if (!selectionModel.hasSelection) {
+                selectionModel.startSelection(caretModel.position)
+            }
+
+            val metrics = getFontMetrics(font)
+            val linesPerPage = (height - 2 * padding) / metrics.height
+
+            repeat(linesPerPage) {
+                caretModel.moveUpWithOption()
+            }
+
+            if (e.isShiftDown) {
+                selectionModel.updateSelection(caretModel.position)
+            }
+        }
+
+        private fun handlePageDown(e: KeyEvent) {
+            if (!e.isShiftDown) {
+                selectionModel.clearSelection()
+            } else if (!selectionModel.hasSelection) {
+                selectionModel.startSelection(caretModel.position)
+            }
+
+            val metrics = getFontMetrics(font)
+            val linesPerPage = (height - 2 * padding) / metrics.height
+
+            repeat(linesPerPage) {
+                caretModel.moveDownWithOption()
+            }
+
+            if (e.isShiftDown) {
+                selectionModel.updateSelection(caretModel.position)
+            }
         }
 
         private fun handleUndo(e: KeyEvent) {
