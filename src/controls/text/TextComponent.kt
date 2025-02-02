@@ -269,14 +269,15 @@ abstract class TextComponent(
                     val clipboard = Toolkit.getDefaultToolkit().systemClipboard
                     val data = clipboard.getData(DataFlavor.stringFlavor) as? String
                     if (data != null) {
-                        val position = caretModel.getCurrentPosition()
                         if (selectionModel.hasSelection) {
                             val selectedText = selectionModel.getSelectedText()
                             val selectionStart = minOf(selectionModel.selectionStart, selectionModel.selectionEnd)
+                            val position = caretModel.getCurrentPosition()
                             undoManager.addEdit(TextAction.Delete(selectionStart, selectedText, position.offset))
                             deleteSelectedText()
                         }
 
+                        val position = caretModel.getCurrentPosition()
                         undoManager.addEdit(TextAction.Insert(position.offset, data, position.offset))
 
                         var insertOffset = position.offset
@@ -505,14 +506,15 @@ abstract class TextComponent(
 
         override fun keyTyped(e: KeyEvent) {
             if (e.keyChar != KeyEvent.CHAR_UNDEFINED && e.keyChar != '\b' && !(e.isControlDown || e.isMetaDown) && e.keyChar != newLineChar) {
-                val position = caretModel.getCurrentPosition()
                 if (selectionModel.hasSelection) {
                     val selectedText = selectionModel.getSelectedText()
                     val selectionStart = minOf(selectionModel.selectionStart, selectionModel.selectionEnd)
+                    val position = caretModel.getCurrentPosition()
                     undoManager.addEdit(TextAction.Delete(selectionStart, selectedText, position.offset))
                     deleteSelectedText()
                 }
 
+                val position = caretModel.getCurrentPosition()
                 textBuffer.insertChar(e.keyChar, position.offset)
                 undoManager.addEdit(TextAction.Insert(position.offset, e.keyChar.toString(), position.offset))
                 caretModel.moveRight()
