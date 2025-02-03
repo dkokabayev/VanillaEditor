@@ -164,16 +164,70 @@ abstract class TextComponent(
     private inner class TextKeyListener : KeyAdapter() {
         override fun keyPressed(e: KeyEvent) {
             when (e.keyCode) {
-                KeyEvent.VK_LEFT -> handleLeftKey(e)
-                KeyEvent.VK_RIGHT -> handleRightKey(e)
-                KeyEvent.VK_UP -> handleUpKey(e)
-                KeyEvent.VK_DOWN -> handleDownKey(e)
+                KeyEvent.VK_LEFT -> {
+                    e.handleShiftSelectionOnNavigation(selectionModel, caretModel) {
+                        when {
+                            e.isControlDown || e.isMetaDown -> caretModel.moveToLineStart()
+                            e.isAltDown -> caretModel.moveToPreviousWord()
+                            else -> caretModel.moveLeft()
+                        }
+                    }
+                }
+
+                KeyEvent.VK_RIGHT -> {
+                    e.handleShiftSelectionOnNavigation(selectionModel, caretModel) {
+                        when {
+                            e.isControlDown || e.isMetaDown -> caretModel.moveToLineEnd()
+                            e.isAltDown -> caretModel.moveToNextWord()
+                            else -> caretModel.moveRight()
+                        }
+                    }
+
+                }
+
+                KeyEvent.VK_UP -> {
+                    e.handleShiftSelectionOnNavigation(selectionModel, caretModel) {
+                        when {
+                            e.isControlDown || e.isMetaDown -> caretModel.moveToTextStart()
+                            e.isAltDown -> caretModel.moveToPreviousLineStart()
+                            else -> caretModel.moveCursorUpPreserveColumn()
+                        }
+                    }
+                }
+
+                KeyEvent.VK_DOWN -> {
+                    e.handleShiftSelectionOnNavigation(selectionModel, caretModel) {
+                        when {
+                            e.isControlDown || e.isMetaDown -> caretModel.moveToTextEnd()
+                            e.isAltDown -> caretModel.moveToNextLineEnd()
+                            else -> caretModel.moveCursorDownPreserveColumn()
+                        }
+                    }
+                }
+
                 KeyEvent.VK_ENTER -> handleEnter()
                 KeyEvent.VK_HOME -> caretModel.moveToTextStart()
                 KeyEvent.VK_END -> caretModel.moveToTextEnd()
-                KeyEvent.VK_PAGE_UP -> handlePageKey(e, true)
-                KeyEvent.VK_PAGE_DOWN -> handlePageKey(e, false)
-                KeyEvent.VK_A -> handleAKey(e)
+                KeyEvent.VK_PAGE_UP -> {
+                    e.handleShiftSelectionOnNavigation(selectionModel = selectionModel, caretModel = caretModel) {
+                        val linesPerPage = getFontMetrics(font).calculateLinesPerPage(height, padding)
+                        repeat(linesPerPage) { caretModel.moveCursorUpPreserveColumn() }
+                    }
+                }
+
+                KeyEvent.VK_PAGE_DOWN -> {
+                    e.handleShiftSelectionOnNavigation(selectionModel = selectionModel, caretModel = caretModel) {
+                        val linesPerPage = getFontMetrics(font).calculateLinesPerPage(height, padding)
+                        repeat(linesPerPage) { caretModel.moveCursorDownPreserveColumn() }
+                    }
+                }
+
+                KeyEvent.VK_A -> {
+                    if (e.isControlDown || e.isMetaDown) {
+                        handleSelectAll()
+                    }
+                }
+
                 KeyEvent.VK_C -> e.handleClipboardCopy(selectionModel)
                 KeyEvent.VK_X -> e.handleClipboardCut(selectionModel, textBuffer, caretModel, undoManager)
                 KeyEvent.VK_V -> e.handleClipboardPaste(selectionModel, textBuffer, caretModel, undoManager)
@@ -204,111 +258,25 @@ abstract class TextComponent(
                         redoAction.start()
                     }
                 }
+
+                else -> return
             }
 
             ensureCaretVisible()
+            restartCaretBlinking()
             repaint()
         }
 
-        private fun handlePageKey(e: KeyEvent, isPageUp: Boolean) {
-            e.handlePageNavigation(
-                selectionModel = selectionModel,
-                caretModel = caretModel,
-                metrics = getFontMetrics(font),
-                viewportHeight = height,
-                padding = padding,
-                isPageUp = isPageUp
-            )
-            restartCaretBlinking()
+        fun handleSelectAll() {
+            with(selectionModel) {
+                startSelection(0)
+                updateSelection(textBuffer.length)
+            }
+            caretModel.moveTo(textBuffer.length)
         }
 
-        private fun handleAKey(e: KeyEvent) {
-            if (e.isControlDown || e.isMetaDown) {
-                selectionModel.startSelection(0)
-                selectionModel.updateSelection(textBuffer.length)
-                caretModel.moveTo(textBuffer.length)
-                repaint()
-            }
-        }
-
-
-        private fun handleLeftKey(e: KeyEvent) {
-            e.handleSelectionForNavigation(selectionModel, caretModel) {
-                when {
-                    e.isControlDown || e.isMetaDown -> caretModel.moveToLineStart()
-                    e.isAltDown -> caretModel.moveToPreviousWord()
-                    else -> caretModel.moveLeft()
-                }
-            }
-            restartCaretBlinking()
-        }
-
-        private fun handleRightKey(e: KeyEvent) {
-            e.handleSelectionForNavigation(selectionModel, caretModel) {
-                when {
-                    e.isControlDown || e.isMetaDown -> caretModel.moveToLineEnd()
-                    e.isAltDown -> caretModel.moveToNextWord()
-                    else -> caretModel.moveRight()
-                }
-            }
-            restartCaretBlinking()
-        }
-
-        private fun handleUpKey(e: KeyEvent) {
-            e.handleSelectionForNavigation(selectionModel, caretModel) {
-                val currentCaretPosition = caretModel.getCurrentPosition()
-                val columnOffset = currentCaretPosition.offset - currentCaretPosition.start
-
-                if (currentCaretPosition.start > 0) {
-                    val prevLineEnd = currentCaretPosition.start - 1
-                    val prevLineStart = textBuffer.getText().lastIndexOf(newLineChar, prevLineEnd - 1) + 1
-                    val prevLineLength = prevLineEnd - prevLineStart
-
-                    val newPosition = when {
-                        e.isControlDown || e.isMetaDown -> 0
-                        else -> {
-                            val newOffset = minOf(columnOffset, prevLineLength)
-                            prevLineStart + newOffset
-                        }
-                    }
-                    caretModel.moveTo(newPosition)
-                } else if (e.isControlDown || e.isMetaDown) {
-                    caretModel.moveToTextStart()
-                }
-            }
-            restartCaretBlinking()
-        }
-
-        private fun handleDownKey(e: KeyEvent) {
-            e.handleSelectionForNavigation(selectionModel, caretModel) {
-                val currentCaretPosition = caretModel.getCurrentPosition()
-                val columnOffset = currentCaretPosition.offset - currentCaretPosition.start
-
-                if (currentCaretPosition.end < textBuffer.length) {
-                    val nextLineStart = currentCaretPosition.end + 1
-                    val nextLineEnd = textBuffer.getText().indexOf(newLineChar, nextLineStart).let {
-                        if (it == -1) textBuffer.length else it
-                    }
-                    val nextLineLength = nextLineEnd - nextLineStart
-
-                    val newPosition = when {
-                        e.isControlDown || e.isMetaDown -> textBuffer.length
-                        else -> {
-                            val newOffset = minOf(columnOffset, nextLineLength)
-                            nextLineStart + newOffset
-                        }
-                    }
-                    caretModel.moveTo(newPosition)
-                } else if (e.isControlDown || e.isMetaDown) {
-                    caretModel.moveToTextEnd()
-                }
-            }
-        }
-
-        private fun handleEnter() {
-            if (selectionModel.hasSelection) {
-                selectionModel.deleteSelectedText(textBuffer, caretModel, undoManager)
-            }
+        fun handleEnter() {
+            selectionModel.takeIf { it.hasSelection }?.deleteSelectedText(textBuffer, caretModel, undoManager)
 
             val position = caretModel.getCurrentPosition()
             undoManager.addEdit(TextAction.Insert(position.offset, newLineChar.toString(), position.offset))
@@ -336,6 +304,7 @@ abstract class TextComponent(
                 undoManager.addEdit(TextAction.Insert(position.offset, e.keyChar.toString(), position.offset))
                 caretModel.moveRight()
                 ensureCaretVisible()
+                restartCaretBlinking()
                 repaint()
             }
         }

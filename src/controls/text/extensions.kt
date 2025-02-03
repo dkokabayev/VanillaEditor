@@ -3,39 +3,21 @@ package controls.text
 import java.awt.FontMetrics
 import java.awt.event.KeyEvent
 
-internal fun KeyEvent.handleSelectionForNavigation(
+internal fun FontMetrics.calculateLinesPerPage(viewportHeight: Int, padding: Int): Int =
+    (viewportHeight - 2 * padding) / this.height
+
+internal fun KeyEvent.handleShiftSelectionOnNavigation(
     selectionModel: SelectionModel, caretModel: CaretModel, navigationAction: () -> Unit
 ) {
-    if (!isShiftDown) {
-        selectionModel.clearSelection()
-    } else if (!selectionModel.hasSelection) {
-        selectionModel.startSelection(caretModel.position)
+    when {
+        !isShiftDown -> selectionModel.clearSelection()
+        !selectionModel.hasSelection -> selectionModel.startSelection(caretModel.position)
     }
 
     navigationAction()
 
     if (isShiftDown) {
         selectionModel.updateSelection(caretModel.position)
-    }
-}
-
-internal fun KeyEvent.handlePageNavigation(
-    selectionModel: SelectionModel,
-    caretModel: CaretModel,
-    metrics: FontMetrics,
-    viewportHeight: Int,
-    padding: Int,
-    isPageUp: Boolean
-) {
-    handleSelectionForNavigation(selectionModel, caretModel) {
-        val linesPerPage = (viewportHeight - 2 * padding) / metrics.height
-        repeat(linesPerPage) {
-            if (isPageUp) {
-                caretModel.moveUpWithOption()
-            } else {
-                caretModel.moveDownWithOption()
-            }
-        }
     }
 }
 

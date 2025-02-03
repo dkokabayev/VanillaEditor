@@ -14,7 +14,7 @@ internal class CaretModel(private val textBuffer: TextBuffer) {
         )
     }
 
-    fun moveUpWithOption() {
+    fun moveCursorUpPreserveColumn() {
         val currentLine = textBuffer.findLineAt(position)
         val columnOffset = position - currentLine.start
 
@@ -23,7 +23,7 @@ internal class CaretModel(private val textBuffer: TextBuffer) {
         }
     }
 
-    fun moveDownWithOption() {
+    fun moveCursorDownPreserveColumn() {
         val currentLine = textBuffer.findLineAt(position)
         val columnOffset = position - currentLine.start
 
@@ -106,8 +106,20 @@ internal class CaretModel(private val textBuffer: TextBuffer) {
         position = textBuffer.findLineAt(position).start
     }
 
+    fun moveToPreviousLineStart() {
+        textBuffer.findPreviousLine(textBuffer.findLineAt(position))?.let {
+            position = it.start
+        }
+    }
+
     fun moveToLineEnd() {
         position = textBuffer.findLineAt(position).end
+    }
+
+    fun moveToNextLineEnd() {
+        textBuffer.findNextLine(textBuffer.findLineAt(position))?.let {
+            position = it.end
+        }
     }
 
     fun moveToTextStart() {
