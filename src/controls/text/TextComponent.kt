@@ -12,9 +12,9 @@ abstract class TextComponent(
     fontName: String,
     fontSize: Int,
     caretBlinkRate: Int,
-    private val backspaceInitialRepeatRate: Int,
-    private val backspaceAccelerationFactor: Double,
-    private val backspaceRepeatMinRate: Int,
+    private val repeatInitialDelay: Int,
+    private val repeatAccelerationFactor: Double,
+    private val repeatMinDelay: Int,
     private val newLineChar: Char,
     private val fontColor: Color,
     private val selectionColor: Color,
@@ -28,9 +28,9 @@ abstract class TextComponent(
     private var caretVisible = true
     private val caretBlinkTimer: Timer
 
-    private var backspacePressed = false
-    private var backspaceTimer: Timer? = null
-    private var backspacePressStartTime: Long = 0
+    private var deletionPressed = false
+    private var deletionRepeatTimer: Timer? = null
+    private var deletionPressStartTime: Long = 0
     private var isMouseDragging = false
 
     init {
@@ -245,16 +245,16 @@ abstract class TextComponent(
         }
 
         private fun handleCharDelete(isBackspace: Boolean) {
-            if (!backspacePressed) {
-                backspacePressed = true
-                backspacePressStartTime = System.currentTimeMillis()
+            if (!deletionPressed) {
+                deletionPressed = true
+                deletionPressStartTime = System.currentTimeMillis()
 
                 if (!selectionModel.deleteSelectedText(textBuffer, caretModel, undoManager)) {
                     val position = caretModel.getCurrentPosition()
                     textBuffer.deleteChar(position.offset, isBackspace, undoManager, caretModel)
                 }
 
-                startBackspaceTimer(isBackspace)
+                startDeletionRepeatTimer(isBackspace)
             }
         }
 
@@ -344,9 +344,9 @@ abstract class TextComponent(
 
         override fun keyReleased(e: KeyEvent) {
             if (e.keyCode == KeyEvent.VK_BACK_SPACE || e.keyCode == KeyEvent.VK_DELETE) {
-                backspacePressed = false
-                backspaceTimer?.stop()
-                backspaceTimer = null
+                deletionPressed = false
+                deletionRepeatTimer?.stop()
+                deletionRepeatTimer = null
             }
         }
 
@@ -366,25 +366,25 @@ abstract class TextComponent(
         }
 
         private fun calculateCurrentDelay(): Int {
-            val elapsedTime = System.currentTimeMillis() - backspacePressStartTime
-            val factor = exp(-backspaceAccelerationFactor * elapsedTime / 1000.0)
-            val currentRate = (backspaceInitialRepeatRate * factor + backspaceRepeatMinRate).toInt()
-            return currentRate.coerceIn(backspaceRepeatMinRate, backspaceInitialRepeatRate)
+            val elapsedTime = System.currentTimeMillis() - deletionPressStartTime
+            val factor = exp(-repeatAccelerationFactor * elapsedTime / 1000.0)
+            val currentRate = (repeatInitialDelay * factor + repeatMinDelay).toInt()
+            return currentRate.coerceIn(repeatMinDelay, repeatInitialDelay)
         }
 
-        private fun startBackspaceTimer(isBackspace: Boolean) {
-            backspaceTimer?.stop()
-            backspaceTimer = Timer(backspaceInitialRepeatRate) {
-                if (backspacePressed) {
+        private fun startDeletionRepeatTimer(isBackspace: Boolean) {
+            deletionRepeatTimer?.stop()
+            deletionRepeatTimer = Timer(repeatInitialDelay) {
+                if (deletionPressed) {
                     val position = caretModel.getCurrentPosition()
                     textBuffer.deleteChar(position.offset, isBackspace, undoManager, caretModel)
                     repaint()
 
                     val currentDelay = calculateCurrentDelay()
-                    backspaceTimer?.delay = currentDelay
+                    deletionRepeatTimer?.delay = currentDelay
                 } else {
-                    backspaceTimer?.stop()
-                    backspaceTimer = null
+                    deletionRepeatTimer?.stop()
+                    deletionRepeatTimer = null
                 }
             }.apply { start() }
             restartCaretBlinking()

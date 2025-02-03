@@ -11,9 +11,9 @@ class TextArea(
     fontName: String = "Monospaced",
     fontSize: Int = 14,
     caretBlinkRate: Int = 500,
-    backspaceInitialRepeatRate: Int = 250,
-    backspaceAccelerationFactor: Double = 0.8,
-    backspaceRepeatMinRate: Int = 1,
+    repeatInitialDelay: Int = 250,
+    repeatAccelerationFactor: Double = 0.8,
+    repeatMinDelay: Int = 1,
     fontColor: Color = Color.BLACK,
     selectionColor: Color = Color.PINK,
     newLineChar: Char = '\n',
@@ -24,8 +24,8 @@ class TextArea(
     scrollBarDragColor: Color = Color(110, 110, 110),
     scrollBarBackgroundColor: Color = Color(230, 230, 230)
 ) : TextComponent(
-    fontName, fontSize, caretBlinkRate, backspaceInitialRepeatRate,
-    backspaceAccelerationFactor, backspaceRepeatMinRate,
+    fontName, fontSize, caretBlinkRate, repeatInitialDelay,
+    repeatAccelerationFactor, repeatMinDelay,
     newLineChar, fontColor, selectionColor, padding
 ) {
     private val scrollModel = ScrollModel()
