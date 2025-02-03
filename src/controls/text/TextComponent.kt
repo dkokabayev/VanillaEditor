@@ -206,8 +206,18 @@ abstract class TextComponent(
                 }
 
                 KeyEvent.VK_ENTER -> handleEnter()
-                KeyEvent.VK_HOME -> caretModel.moveToTextStart()
-                KeyEvent.VK_END -> caretModel.moveToTextEnd()
+                KeyEvent.VK_HOME -> {
+                    e.handleShiftSelectionOnNavigation(selectionModel = selectionModel, caretModel = caretModel) {
+                        caretModel.moveToTextStart()
+                    }
+                }
+
+                KeyEvent.VK_END -> {
+                    e.handleShiftSelectionOnNavigation(selectionModel = selectionModel, caretModel = caretModel) {
+                        caretModel.moveToTextEnd()
+                    }
+                }
+
                 KeyEvent.VK_PAGE_UP -> {
                     e.handleShiftSelectionOnNavigation(selectionModel = selectionModel, caretModel = caretModel) {
                         val linesPerPage = getFontMetrics(font).calculateLinesPerPage(height, padding)
