@@ -182,8 +182,8 @@ abstract class TextComponent(
     private inner class TextKeyListener : KeyAdapter() {
         override fun keyPressed(e: KeyEvent) {
             when (e.keyCode) {
-                KeyEvent.VK_BACK_SPACE -> handleBackspace()
-                KeyEvent.VK_DELETE -> handleDelete()
+                KeyEvent.VK_BACK_SPACE -> handleCharDelete(true)
+                KeyEvent.VK_DELETE -> handleCharDelete(false)
                 KeyEvent.VK_LEFT -> handleLeftKey(e)
                 KeyEvent.VK_RIGHT -> handleRightKey(e)
                 KeyEvent.VK_UP -> handleUpKey(e)
@@ -244,34 +244,20 @@ abstract class TextComponent(
             }
         }
 
-        private fun handleBackspace() {
-            if (!selectionModel.deleteSelectedText(textBuffer, caretModel, undoManager))
-                
-
+        private fun handleCharDelete(isBackspace: Boolean) {
             if (!backspacePressed) {
                 backspacePressed = true
                 backspacePressStartTime = System.currentTimeMillis()
-                val position = caretModel.getCurrentPosition()
-                if (position.offset > 0) {
-                    val deletedChar = textBuffer.charAt(position.offset - 1)
-                    undoManager.addEdit(TextAction.Delete(position.offset - 1, deletedChar.toString(), position.offset))
-                    textBuffer.deleteCharAt(position.offset - 1)
-                    caretModel.moveLeft()
+
+                if (!selectionModel.deleteSelectedText(textBuffer, caretModel, undoManager)) {
+                    val position = caretModel.getCurrentPosition()
+                    textBuffer.deleteChar(position.offset, isBackspace, undoManager, caretModel)
                 }
-                startBackspaceTimer()
+
+                startBackspaceTimer(isBackspace)
             }
         }
 
-        private fun handleDelete() {
-            selectionModel.deleteSelectedText(textBuffer, caretModel, undoManager)
-
-            val position = caretModel.getCurrentPosition()
-            if (position.offset < textBuffer.length) {
-                val deletedChar = textBuffer.charAt(position.offset)
-                undoManager.addEdit(TextAction.Delete(position.offset, deletedChar.toString(), position.offset))
-                textBuffer.deleteCharAt(position.offset)
-            }
-        }
 
         private fun handleLeftKey(e: KeyEvent) {
             e.handleSelectionForNavigation(selectionModel, caretModel) {
@@ -357,7 +343,7 @@ abstract class TextComponent(
         }
 
         override fun keyReleased(e: KeyEvent) {
-            if (e.keyCode == KeyEvent.VK_BACK_SPACE) {
+            if (e.keyCode == KeyEvent.VK_BACK_SPACE || e.keyCode == KeyEvent.VK_DELETE) {
                 backspacePressed = false
                 backspaceTimer?.stop()
                 backspaceTimer = null
@@ -386,19 +372,16 @@ abstract class TextComponent(
             return currentRate.coerceIn(backspaceRepeatMinRate, backspaceInitialRepeatRate)
         }
 
-        private fun startBackspaceTimer() {
+        private fun startBackspaceTimer(isBackspace: Boolean) {
             backspaceTimer?.stop()
             backspaceTimer = Timer(backspaceInitialRepeatRate) {
                 if (backspacePressed) {
                     val position = caretModel.getCurrentPosition()
-                    if (position.offset > 0) {
-                        textBuffer.deleteCharAt(position.offset - 1)
-                        caretModel.moveLeft()
-                        repaint()
+                    textBuffer.deleteChar(position.offset, isBackspace, undoManager, caretModel)
+                    repaint()
 
-                        val currentDelay = calculateCurrentDelay()
-                        backspaceTimer?.delay = currentDelay
-                    }
+                    val currentDelay = calculateCurrentDelay()
+                    backspaceTimer?.delay = currentDelay
                 } else {
                     backspaceTimer?.stop()
                     backspaceTimer = null

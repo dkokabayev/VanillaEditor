@@ -58,3 +58,22 @@ internal fun SelectionModel.deleteSelectedText(
 
     return true
 }
+
+internal fun TextBuffer.deleteChar(
+    position: Int, isBackspace: Boolean, undoManager: UndoManager, caretModel: CaretModel
+): Char? {
+    if (isBackspace) {
+        if (position > 0) {
+            val deletedChar = charAt(position - 1)
+            undoManager.addEdit(TextAction.Delete(position - 1, deletedChar.toString(), position))
+            this.deleteCharAt(position - 1)
+            caretModel.moveLeft()
+        }
+    } else if (position < this.length) {
+        val deletedChar = charAt(position)
+        undoManager.addEdit(TextAction.Delete(position, deletedChar.toString(), position))
+        this.deleteCharAt(position)
+    }
+
+    return null;
+}
