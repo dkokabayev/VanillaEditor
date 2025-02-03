@@ -1,6 +1,9 @@
 package controls.text
 
-import java.awt.*
+import java.awt.Color
+import java.awt.Font
+import java.awt.Graphics
+import java.awt.Point
 import java.awt.event.*
 import javax.swing.JComponent
 import javax.swing.Timer
@@ -15,18 +18,25 @@ abstract class TextComponent(
     repeatAccelerationFactor: Double,
     repeatMinDelay: Int,
     private val newLineChar: Char,
-    protected val fontColor: Color,
-    protected val selectionColor: Color,
+    fontColor: Color,
+    selectionColor: Color,
     private val padding: Int,
 ) : JComponent() {
-
+    private val undoManager = UndoManager()
+    private val caretBlinkTimer: Timer
+    private var isMouseDragging = false
+    protected var caretVisible = true
     internal val textBuffer = TextBuffer(newLineChar)
     internal val caretModel = CaretModel(textBuffer)
     internal val selectionModel = SelectionModel(textBuffer)
-    private val undoManager = UndoManager()
-    protected var caretVisible = true
-    private val caretBlinkTimer: Timer
-    private var isMouseDragging = false
+    internal val textRenderer = TextRenderer(
+        textBuffer = textBuffer,
+        caretModel = caretModel,
+        selectionModel = selectionModel,
+        padding = padding,
+        fontColor = fontColor,
+        selectionColor = selectionColor
+    )
 
     private val backspaceAction = RepeatableAction(
         initialDelay = repeatInitialDelay, accelerationFactor = repeatAccelerationFactor, minDelay = repeatMinDelay
@@ -110,55 +120,11 @@ abstract class TextComponent(
         super.paintComponent(g)
         g.font = font
 
-        val fm = g.fontMetrics
-        val lineHeight = fm.ascent + fm.descent
+        val context = TextRenderer.RenderContext(
+            graphics = g, clip = g.clipBounds, width = width, height = height, caretVisible = caretVisible
+        )
 
-        selectionModel.getCurrentSelection()?.let { (start, end) ->
-            g.color = selectionColor
-            paintTextSelection(g, fm, start, end)
-        }
-
-        g.color = fontColor
-        var y = lineHeight
-        val lines = textBuffer.getLines()
-        for (line in lines) {
-            g.drawString(line, padding, y)
-            y += lineHeight
-        }
-
-        if (caretVisible) {
-            val (caretX, caretY) = getCaretCoordinates(fm)
-            g.drawLine(caretX + padding, caretY - fm.ascent, caretX + padding, caretY - fm.ascent + lineHeight)
-        }
-    }
-
-    private fun paintTextSelection(g: Graphics, fm: FontMetrics, start: Int, end: Int) {
-        val lineHeight = fm.ascent + fm.descent
-
-        var currentPos = 0
-        var y = lineHeight
-
-        for (line in textBuffer.getLines()) {
-            val lineStart = currentPos
-            val lineEnd = lineStart + line.length
-
-            if (end > lineStart && start < lineEnd + 1) {
-                val selStart = maxOf(start - lineStart, 0)
-                val selEnd = minOf(end - lineStart, line.length)
-
-                if (line.isEmpty() && selStart == 0) {
-                    g.fillRect(padding, y - fm.ascent, fm.charWidth(' '), lineHeight)
-                } else {
-                    val startX = fm.stringWidth(line.substring(0, selStart))
-                    val width = fm.stringWidth(line.substring(selStart, selEnd))
-
-                    g.fillRect(startX + padding, y - fm.ascent, width, lineHeight)
-                }
-            }
-
-            currentPos = lineEnd + 1
-            y += lineHeight
-        }
+        textRenderer.render(context)
     }
 
     protected open fun getPositionFromPoint(point: Point): Int {
@@ -187,19 +153,6 @@ abstract class TextComponent(
         }
 
         return textBuffer.length
-    }
-
-    protected fun getCaretCoordinates(fm: FontMetrics): Pair<Int, Int> {
-        val caretPosition = caretModel.getCurrentPosition()
-        val textBeforeCaret = textBuffer.getText().substring(0, caretPosition.offset)
-        val splitBeforeCaret = textBeforeCaret.split(newLineChar)
-
-        val caretLineIndex = splitBeforeCaret.size - 1
-        val currentLineText = splitBeforeCaret.lastOrNull() ?: ""
-
-        val x = fm.stringWidth(currentLineText)
-        val y = (fm.ascent + fm.descent) * (caretLineIndex + 1)
-        return Pair(x, y)
     }
 
     private fun restartCaretBlinking() {

@@ -1,6 +1,9 @@
 package controls.text
 
-import java.awt.*
+import java.awt.Color
+import java.awt.Graphics
+import java.awt.Point
+import java.awt.Rectangle
 import java.awt.event.MouseEvent
 import java.awt.event.MouseMotionAdapter
 import kotlin.math.roundToInt
@@ -143,89 +146,30 @@ class TextArea(
     }
 
     override fun paintComponent(g: Graphics) {
+        g.font = font
+        val originalClip = g.clipBounds
         paintContent(g)
+        g.clip = originalClip
         paintScrollBar(g)
     }
 
     private fun paintContent(g: Graphics) {
         val clipBounds = g.clipBounds ?: Rectangle(0, 0, width, height)
-        g.clipRect(0, 0, width - scrollBarModel.getWidth(), height)
+        val contentClip = g.clipBounds?.let { Rectangle(it) } ?: clipBounds
+        contentClip.width = width - scrollBarModel.getWidth()
+        g.clip = contentClip
 
-        val fm = getFontMetrics(font)
-        val lineHeight = fm.height
-        val firstVisibleLine = (scrollModel.scrollY / lineHeight).coerceAtLeast(0)
-        val visibleLinesCount = (height / lineHeight + 2)
-
-        val allLines = textBuffer.getAllLines()
-        val visibleLines = allLines.subList(
-            firstVisibleLine.coerceAtMost(allLines.size),
-            (firstVisibleLine + visibleLinesCount).coerceAtMost(allLines.size)
+        val context = TextRenderer.RenderContext(
+            graphics = g,
+            clip = clipBounds,
+            scrollY = scrollModel.scrollY,
+            width = width,
+            height = height,
+            caretVisible = caretVisible
         )
 
-        g.translate(0, -scrollModel.scrollY)
-        g.color = fontColor
-
-        selectionModel.getCurrentSelection()?.let { selection ->
-            g.color = selectionColor
-            paintTextSelection(g, fm, selection.start, selection.end, firstVisibleLine, visibleLines)
-        }
-
-        g.color = fontColor
-        var y = (firstVisibleLine * lineHeight) + fm.ascent + padding
-        for (line in visibleLines) {
-            g.drawString(line.text, padding, y)
-            y += lineHeight
-        }
-
-        if (caretVisible) {
-            val caretPosition = caretModel.getCurrentPosition()
-            val caretLine = textBuffer.findLineAt(caretPosition.offset)
-            val lineIndex = allLines.indexOfFirst { it.start == caretLine.start }
-
-            if (lineIndex in firstVisibleLine..<firstVisibleLine + visibleLinesCount) {
-                val (caretX, caretY) = getCaretCoordinates(fm)
-                g.drawLine(
-                    caretX + padding, caretY - fm.ascent, caretX + padding, caretY - fm.ascent + lineHeight
-                )
-            }
-        }
-
-        g.translate(0, scrollModel.scrollY)
+        textRenderer.render(context)
         g.clip = clipBounds
-    }
-
-    private fun paintTextSelection(
-        g: Graphics,
-        fm: FontMetrics,
-        selectionStart: Int,
-        selectionEnd: Int,
-        firstVisibleLine: Int,
-        visibleLines: List<TextBuffer.LineInfo>
-    ) {
-        val lineHeight = fm.height
-        var currentPos = visibleLines.firstOrNull()?.start ?: 0
-        var y = (firstVisibleLine * lineHeight) + padding
-
-        for (line in visibleLines) {
-            val lineStart = line.start
-            val lineEnd = line.end
-
-            if (selectionEnd > lineStart && selectionStart < lineEnd + 1) {
-                val selStart = maxOf(selectionStart - lineStart, 0)
-                val selEnd = minOf(selectionEnd - lineStart, line.text.length)
-
-                if (line.text.isEmpty() && selStart == 0) {
-                    g.fillRect(padding, y, fm.charWidth(' '), lineHeight)
-                } else {
-                    val startX = fm.stringWidth(line.text.substring(0, selStart))
-                    val width = fm.stringWidth(line.text.substring(selStart, selEnd))
-                    g.fillRect(startX + padding, y, width, lineHeight)
-                }
-            }
-
-            currentPos = lineEnd + 1
-            y += lineHeight
-        }
     }
 
     private fun paintScrollBar(g: Graphics) {
@@ -249,7 +193,7 @@ class TextArea(
     }
 
     private fun getContentHeight(): Int {
-        val lineHeight = getFontMetrics(font).height
-        return lineHeight * textBuffer.getAllLines().size + padding * 2
+        val fm = getFontMetrics(font)
+        return fm.height * textBuffer.getAllLines().size + padding * 2
     }
 }
