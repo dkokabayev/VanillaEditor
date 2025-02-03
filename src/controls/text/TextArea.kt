@@ -37,7 +37,14 @@ class TextArea(
     padding
 ) {
     private val scrollModel = ScrollModel()
-    private val scrollBarModel = ScrollBarModel(
+    private val verticalScrollBar = ScrollBarModel(
+        width = scrollBarWidth,
+        color = scrollBarColor,
+        hoverColor = scrollBarHoverColor,
+        dragColor = scrollBarDragColor,
+        backgroundColor = scrollBarBackgroundColor
+    )
+    private val horizontalScrollBar = ScrollBarModel(
         width = scrollBarWidth,
         color = scrollBarColor,
         hoverColor = scrollBarHoverColor,
@@ -47,98 +54,196 @@ class TextArea(
 
     init {
         addMouseWheelListener { e ->
-            val scrollAmount = e.preciseWheelRotation * getFontMetrics(font).height
-            scrollModel.scrollY = (scrollModel.scrollY + scrollAmount.roundToInt()).coerceIn(0, scrollModel.maxScrollY)
+            if (e.isShiftDown) {
+                val scrollAmount = e.preciseWheelRotation * getFontMetrics(font).charWidth('m')
+                scrollModel.scrollX =
+                    (scrollModel.scrollX + scrollAmount.roundToInt()).coerceIn(0, scrollModel.maxScrollX)
+            } else {
+                val scrollAmount = e.preciseWheelRotation * getFontMetrics(font).height
+                scrollModel.scrollY =
+                    (scrollModel.scrollY + scrollAmount.roundToInt()).coerceIn(0, scrollModel.maxScrollY)
+            }
             repaint()
         }
 
         addMouseMotionListener(object : MouseMotionAdapter() {
             override fun mouseMoved(e: MouseEvent) {
-                updateScrollBarHover(e.point)
+                updateScrollBarsHover(e.point)
             }
 
             override fun mouseDragged(e: MouseEvent) {
-                if (scrollModel.isDragging) {
-                    scrollModel.updateDragPosition(e.y, height, getContentHeight())
+                if (scrollModel.isVerticalDragging) {
+                    scrollModel.updateVerticalDragPosition(
+                        e.y, height - horizontalScrollBar.getWidth(), getContentHeight()
+                    )
+                    repaint()
+                }
+                if (scrollModel.isHorizontalDragging) {
+                    scrollModel.updateHorizontalDragPosition(
+                        e.x, width - verticalScrollBar.getWidth(), getContentWidth()
+                    )
                     repaint()
                 }
             }
         })
     }
 
+    private data class ScrollBarArea(val x: Int, val y: Int, val width: Int, val height: Int) {
+        fun contains(point: Point) = point.x in x..(x + width) && point.y in y..(y + height)
+    }
+
+    private fun getVerticalScrollBarArea() = ScrollBarArea(
+        x = width - verticalScrollBar.getWidth(),
+        y = 0,
+        width = verticalScrollBar.getWidth(),
+        height = height - horizontalScrollBar.getWidth()
+    )
+
+    private fun getHorizontalScrollBarArea() = ScrollBarArea(
+        x = 0,
+        y = height - horizontalScrollBar.getWidth(),
+        width = width - verticalScrollBar.getWidth(),
+        height = horizontalScrollBar.getWidth()
+    )
+
+    private fun updateScrollBarsHover(point: Point) {
+        val wasVerticalHovered = scrollModel.isVerticalHovered
+        val wasHorizontalHovered = scrollModel.isHorizontalHovered
+
+        scrollModel.isVerticalHovered = getVerticalScrollBarArea().contains(point)
+        scrollModel.isHorizontalHovered = getHorizontalScrollBarArea().contains(point)
+
+        if (wasVerticalHovered != scrollModel.isVerticalHovered || wasHorizontalHovered != scrollModel.isHorizontalHovered) {
+            repaint()
+        }
+    }
+
     override fun processMouseEvent(e: MouseEvent) {
         when (e.id) {
             MouseEvent.MOUSE_PRESSED -> {
-                if (handleScrollBarClick(e.point)) return
+                if (handleVerticalScrollBarClick(e.point) || handleHorizontalScrollBarClick(e.point)) return
             }
 
             MouseEvent.MOUSE_RELEASED -> {
-                if (scrollModel.isDragging) {
+                if (scrollModel.isVerticalDragging || scrollModel.isHorizontalDragging) {
                     scrollModel.stopDragging()
                     repaint()
                     return
                 }
             }
 
-            MouseEvent.MOUSE_ENTERED -> updateScrollBarHover(e.point)
+            MouseEvent.MOUSE_ENTERED -> updateScrollBarsHover(e.point)
             MouseEvent.MOUSE_EXITED -> {
-                scrollModel.isHovered = false
+                scrollModel.isVerticalHovered = false
+                scrollModel.isHorizontalHovered = false
                 repaint()
             }
         }
         super.processMouseEvent(e)
     }
 
-    private fun handleScrollBarClick(point: Point): Boolean {
-        if (!scrollBarModel.isInScrollBarArea(point, width, getContentHeight(), height)) {
-            return false
-        }
-
-        val metrics = scrollBarModel.calculateMetrics(
-            componentHeight = height,
-            contentHeight = getContentHeight(),
-            scrollY = scrollModel.scrollY,
-            maxScrollY = scrollModel.maxScrollY
+    private fun handleVerticalScrollBarClick(point: Point): Boolean {
+        val verticalBarArea = Rectangle(
+            width - verticalScrollBar.getWidth(),
+            0,
+            verticalScrollBar.getWidth(),
+            height - horizontalScrollBar.getWidth()
         )
 
-        if (scrollBarModel.isInScrollBarThumb(point, metrics)) {
-            scrollModel.startDragging(point.y)
+        if (!verticalBarArea.contains(point)) return false
+
+        val metrics = verticalScrollBar.calculateMetrics(
+            viewportSize = height - horizontalScrollBar.getWidth(),
+            contentSize = getContentHeight(),
+            scroll = scrollModel.scrollY,
+            maxScroll = scrollModel.maxScrollY
+        )
+
+        val thumbRect = Rectangle(
+            width - verticalScrollBar.getWidth(), metrics.thumbPosition, verticalScrollBar.getWidth(), metrics.thumbSize
+        )
+
+        if (thumbRect.contains(point)) {
+            scrollModel.startVerticalDragging(point.y)
         } else {
-            scrollModel.scrollY = scrollBarModel.calculateScrollPositionFromClick(
-                clickY = point.y, metrics = metrics, componentHeight = height, maxScrollY = scrollModel.maxScrollY
+            scrollModel.scrollY = verticalScrollBar.calculateScrollPositionFromClick(
+                click = point.y,
+                metrics = metrics,
+                viewportSize = height - horizontalScrollBar.getWidth(),
+                maxScroll = scrollModel.maxScrollY
             )
         }
         repaint()
         return true
     }
 
-    private fun updateScrollBarHover(point: Point) {
-        val wasHovered = scrollModel.isHovered
-        scrollModel.isHovered = scrollBarModel.isInScrollBarArea(
-            point, width, getContentHeight(), height
+    private fun handleHorizontalScrollBarClick(point: Point): Boolean {
+        val horizontalBarArea = Rectangle(
+            0,
+            height - horizontalScrollBar.getWidth(),
+            width - verticalScrollBar.getWidth(),
+            horizontalScrollBar.getWidth()
         )
 
-        if (wasHovered != scrollModel.isHovered) {
-            repaint()
+        if (!horizontalBarArea.contains(point)) return false
+
+        val metrics = horizontalScrollBar.calculateMetrics(
+            viewportSize = width - verticalScrollBar.getWidth(),
+            contentSize = getContentWidth(),
+            scroll = scrollModel.scrollX,
+            maxScroll = scrollModel.maxScrollX
+        )
+
+        val thumbRect = Rectangle(
+            metrics.thumbPosition,
+            height - horizontalScrollBar.getWidth(),
+            metrics.thumbSize,
+            horizontalScrollBar.getWidth()
+        )
+
+        if (thumbRect.contains(point)) {
+            scrollModel.startHorizontalDragging(point.x)
+        } else {
+            scrollModel.scrollX = horizontalScrollBar.calculateScrollPositionFromClick(
+                click = point.x,
+                metrics = metrics,
+                viewportSize = width - verticalScrollBar.getWidth(),
+                maxScroll = scrollModel.maxScrollX
+            )
         }
+        repaint()
+        return true
     }
 
     override fun getPositionFromPoint(point: Point): Int {
-        val adjustedPoint = Point(point.x, point.y + scrollModel.scrollY)
+        val adjustedPoint = Point(
+            point.x + scrollModel.scrollX, point.y + scrollModel.scrollY
+        )
         return super.getPositionFromPoint(adjustedPoint)
     }
 
     override fun ensureCaretVisible() {
-        val lineHeight = getFontMetrics(font).height
-        val caretLine = textBuffer.findLineAt(caretModel.getCurrentPosition().offset)
+        val fm = getFontMetrics(font)
+        val lineHeight = fm.height
+        val caretPosition = caretModel.getCurrentPosition()
+        val caretLine = textBuffer.findLineAt(caretPosition.offset)
         val caretY = lineHeight * textBuffer.getAllLines().indexOfFirst { it.start == caretLine.start }
+        val textBeforeCaret = caretLine.text.substring(0, caretPosition.offset - caretLine.start)
+        val caretX = fm.stringWidth(textBeforeCaret)
 
         scrollModel.scrollY = when {
             caretY < scrollModel.scrollY -> caretY
-            caretY + lineHeight > scrollModel.scrollY + height -> caretY + lineHeight + padding * 2 - height
+            caretY + lineHeight > scrollModel.scrollY + (height - horizontalScrollBar.getWidth()) -> caretY + lineHeight + padding * 2 - (height - horizontalScrollBar.getWidth())
 
             else -> scrollModel.scrollY
         }.coerceIn(0, scrollModel.maxScrollY)
+
+        scrollModel.scrollX = when {
+            caretX < scrollModel.scrollX -> caretX
+            caretX > scrollModel.scrollX + (width - verticalScrollBar.getWidth()) -> caretX + padding * 2 - (width - verticalScrollBar.getWidth())
+
+            else -> scrollModel.scrollX
+        }.coerceIn(0, scrollModel.maxScrollX)
     }
 
     override fun onTextChanged() {
@@ -148,52 +253,86 @@ class TextArea(
     override fun paintComponent(g: Graphics) {
         g.font = font
         val originalClip = g.clipBounds
+
         paintContent(g)
         g.clip = originalClip
-        paintScrollBar(g)
+
+        scrollModel.maxScrollY = maxOf(0, getContentHeight() - (height - horizontalScrollBar.getWidth()))
+        scrollModel.maxScrollX = maxOf(0, getContentWidth() - (width - verticalScrollBar.getWidth()))
+
+        paintVerticalScrollBar(g)
+        paintHorizontalScrollBar(g)
     }
 
     private fun paintContent(g: Graphics) {
         val clipBounds = g.clipBounds ?: Rectangle(0, 0, width, height)
-        val contentClip = g.clipBounds?.let { Rectangle(it) } ?: clipBounds
-        contentClip.width = width - scrollBarModel.getWidth()
+        val contentClip = Rectangle(clipBounds)
+        contentClip.width = width - verticalScrollBar.getWidth()
+        contentClip.height = height - horizontalScrollBar.getWidth()
         g.clip = contentClip
 
         val context = TextRenderer.RenderContext(
             graphics = g,
             clip = clipBounds,
+            scrollX = scrollModel.scrollX,
             scrollY = scrollModel.scrollY,
-            width = width,
-            height = height,
+            width = width - verticalScrollBar.getWidth(),
+            height = height - horizontalScrollBar.getWidth(),
             caretVisible = caretVisible
         )
 
         textRenderer.render(context)
-        g.clip = clipBounds
     }
 
-    private fun paintScrollBar(g: Graphics) {
-        scrollModel.maxScrollY = maxOf(0, getContentHeight() - height)
-
-        val metrics = scrollBarModel.calculateMetrics(
-            componentHeight = height,
-            contentHeight = getContentHeight(),
-            scrollY = scrollModel.scrollY,
-            maxScrollY = scrollModel.maxScrollY
+    private fun paintVerticalScrollBar(g: Graphics) {
+        val metrics = verticalScrollBar.calculateMetrics(
+            viewportSize = height - horizontalScrollBar.getWidth(),
+            contentSize = getContentHeight(),
+            scroll = scrollModel.scrollY,
+            maxScroll = scrollModel.maxScrollY
         )
 
-        scrollBarModel.paint(
+        verticalScrollBar.paintScrollBar(
             g = g,
-            componentWidth = width,
-            componentHeight = height,
+            orientation = ScrollBarModel.Orientation.Vertical,
+            x = width - verticalScrollBar.getWidth(),
+            y = 0,
+            length = height - horizontalScrollBar.getWidth(),
             metrics = metrics,
-            isHovered = scrollModel.isHovered,
-            isDragging = scrollModel.isDragging
+            isHovered = scrollModel.isVerticalHovered,
+            isDragging = scrollModel.isVerticalDragging
+        )
+    }
+
+    private fun paintHorizontalScrollBar(g: Graphics) {
+        val metrics = horizontalScrollBar.calculateMetrics(
+            viewportSize = width - verticalScrollBar.getWidth(),
+            contentSize = getContentWidth(),
+            scroll = scrollModel.scrollX,
+            maxScroll = scrollModel.maxScrollX
+        )
+
+        horizontalScrollBar.paintScrollBar(
+            g = g,
+            orientation = ScrollBarModel.Orientation.Horizontal,
+            x = 0,
+            y = height - horizontalScrollBar.getWidth(),
+            length = width - verticalScrollBar.getWidth(),
+            metrics = metrics,
+            isHovered = scrollModel.isHorizontalHovered,
+            isDragging = scrollModel.isHorizontalDragging
         )
     }
 
     private fun getContentHeight(): Int {
         val fm = getFontMetrics(font)
         return fm.height * textBuffer.getAllLines().size + padding * 2
+    }
+
+    private fun getContentWidth(): Int {
+        val fm = getFontMetrics(font)
+        return textBuffer.getAllLines().maxOf { line ->
+            fm.stringWidth(line.text)
+        } + padding * 2
     }
 }

@@ -16,6 +16,7 @@ internal class TextRenderer(
     data class RenderContext(
         val graphics: Graphics,
         val clip: Rectangle?,
+        val scrollX: Int = 0,
         val scrollY: Int = 0,
         val width: Int = 0,
         val height: Int = 0,
@@ -26,23 +27,22 @@ internal class TextRenderer(
         val firstVisibleLine: Int,
         val visibleLines: List<TextBuffer.LineInfo>,
         val lineHeight: Int,
-        val fontMetrics: FontMetrics
+        val fontMetrics: FontMetrics,
+        val visibleCharRanges: List<CharRange>
+    )
+
+    internal data class CharRange(
+        val start: Int, val end: Int
     )
 
     private fun calculateVisibleContent(
-        g: Graphics,
-        scrollY: Int,
-        height: Int
+        g: Graphics, scrollX: Int, scrollY: Int, viewportWidth: Int, viewportHeight: Int
     ): VisibleContent {
         val fm = g.fontMetrics
         val lineHeight = fm.height
 
-        if (scrollY == 0) {
-            return VisibleContent(0, textBuffer.getAllLines(), lineHeight, fm)
-        }
-
         val firstVisibleLine = (scrollY / lineHeight).coerceAtLeast(0)
-        val visibleLinesCount = (height / lineHeight + 2)
+        val visibleLinesCount = (viewportHeight / lineHeight + 2)
 
         val allLines = textBuffer.getAllLines()
         val visibleLines = allLines.subList(
@@ -50,33 +50,60 @@ internal class TextRenderer(
             (firstVisibleLine + visibleLinesCount).coerceAtMost(allLines.size)
         )
 
-        return VisibleContent(firstVisibleLine, visibleLines, lineHeight, fm)
+        val visibleCharRanges = visibleLines.map { line ->
+            calculateVisibleCharRange(line.text, fm, scrollX, viewportWidth)
+        }
+
+        return VisibleContent(
+            firstVisibleLine = firstVisibleLine,
+            visibleLines = visibleLines,
+            lineHeight = lineHeight,
+            fontMetrics = fm,
+            visibleCharRanges = visibleCharRanges
+        )
+    }
+
+    private fun calculateVisibleCharRange(
+        text: String, fm: FontMetrics, scrollX: Int, viewportWidth: Int
+    ): CharRange {
+        if (text.isEmpty()) return CharRange(0, 0)
+
+        var currentWidth = 0
+        val startChar = text.indices.firstOrNull { index ->
+            currentWidth += fm.charWidth(text[index])
+            currentWidth > scrollX
+        } ?: 0
+
+        currentWidth = 0
+        val endChar = (startChar..text.length).firstOrNull { index ->
+            if (index < text.length) {
+                currentWidth += fm.charWidth(text[index])
+                currentWidth > viewportWidth
+            } else true
+        } ?: text.length
+
+        return CharRange(startChar, endChar)
     }
 
     fun render(context: RenderContext) {
         val visibleContent = calculateVisibleContent(
-            context.graphics,
-            context.scrollY,
-            context.height
+            g = context.graphics,
+            scrollX = context.scrollX,
+            scrollY = context.scrollY,
+            viewportWidth = context.width,
+            viewportHeight = context.height
         )
 
-        if (context.scrollY != 0) {
-            context.graphics.translate(0, -context.scrollY)
-        }
-
+        context.graphics.translate(-context.scrollX, -context.scrollY)
         renderContent(context, visibleContent)
-
-        if (context.scrollY != 0) {
-            context.graphics.translate(0, context.scrollY)
-        }
+        context.graphics.translate(context.scrollX, context.scrollY)
     }
 
     private fun renderContent(
-        context: RenderContext,
-        visibleContent: VisibleContent
+        context: RenderContext, visibleContent: VisibleContent
     ) {
         val g = context.graphics
-        val (firstVisibleLine, visibleLines, lineHeight, fm) = visibleContent
+        val (firstVisibleLine, visibleLines, lineHeight, fm, visibleCharRanges) = visibleContent
 
         selectionModel.getCurrentSelection()?.let { selection ->
             g.color = selectionColor
@@ -85,8 +112,17 @@ internal class TextRenderer(
 
         g.color = fontColor
         var y = (firstVisibleLine * lineHeight) + fm.ascent + padding
-        for (line in visibleLines) {
-            g.drawString(line.text, padding, y)
+
+        for ((line, charRange) in visibleLines.zip(visibleCharRanges)) {
+            if (line.text.isNotEmpty() && charRange.end > charRange.start) {
+                var x = padding
+                if (charRange.start > 0) {
+                    x += fm.stringWidth(line.text.substring(0, charRange.start))
+                }
+
+                val visibleText = line.text.substring(charRange.start, charRange.end)
+                g.drawString(visibleText, x, y)
+            }
             y += lineHeight
         }
 
@@ -96,27 +132,30 @@ internal class TextRenderer(
     }
 
     private fun renderSelection(
-        g: Graphics,
-        visibleContent: VisibleContent,
-        selectionStart: Int,
-        selectionEnd: Int
+        g: Graphics, visibleContent: VisibleContent, selectionStart: Int, selectionEnd: Int
     ) {
-        val (firstVisibleLine, visibleLines, lineHeight, fm) = visibleContent
+        val (firstVisibleLine, visibleLines, lineHeight, fm, visibleCharRanges) = visibleContent
         var y = (firstVisibleLine * lineHeight) + padding
 
-        for (line in visibleLines) {
+        for ((line, charRange) in visibleLines.zip(visibleCharRanges)) {
             val lineStart = line.start
             val lineEnd = line.end
 
             if (selectionEnd > lineStart && selectionStart < lineEnd + 1) {
-                val selStart = maxOf(selectionStart - lineStart, 0)
-                val selEnd = minOf(selectionEnd - lineStart, line.text.length)
+                val visibleSelStart = maxOf(selectionStart - lineStart, charRange.start)
+                val visibleSelEnd = minOf(selectionEnd - lineStart, charRange.end)
 
-                if (line.text.isEmpty() && selStart == 0) {
-                    g.fillRect(padding, y, fm.charWidth(' '), lineHeight)
-                } else {
-                    val startX = fm.stringWidth(line.text.substring(0, selStart))
-                    val width = fm.stringWidth(line.text.substring(selStart, selEnd))
+                if (visibleSelEnd > visibleSelStart) {
+                    val startX = if (visibleSelStart > 0) {
+                        fm.stringWidth(line.text.substring(0, visibleSelStart))
+                    } else 0
+
+                    val width = fm.stringWidth(
+                        line.text.substring(
+                            visibleSelStart, visibleSelEnd
+                        )
+                    )
+
                     g.fillRect(startX + padding, y, width, lineHeight)
                 }
             }
@@ -125,10 +164,9 @@ internal class TextRenderer(
     }
 
     private fun renderCaret(
-        g: Graphics,
-        visibleContent: VisibleContent
+        g: Graphics, visibleContent: VisibleContent
     ) {
-        val (firstVisibleLine, visibleLines, lineHeight, fm) = visibleContent
+        val (firstVisibleLine, visibleLines, lineHeight, fm, _) = visibleContent
         val caretPosition = caretModel.getCurrentPosition()
         val caretLine = textBuffer.findLineAt(caretPosition.offset)
 
@@ -139,10 +177,7 @@ internal class TextRenderer(
             val caretY = (lineIndex * lineHeight) + padding + fm.ascent
 
             g.drawLine(
-                caretX + padding,
-                caretY - fm.ascent,
-                caretX + padding,
-                caretY - fm.ascent + lineHeight
+                caretX + padding, caretY - fm.ascent, caretX + padding, caretY - fm.ascent + lineHeight
             )
         }
     }

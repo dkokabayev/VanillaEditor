@@ -2,72 +2,55 @@ package controls.text
 
 import java.awt.Color
 import java.awt.Graphics
-import java.awt.Point
 import kotlin.math.roundToInt
 
-class ScrollBarModel(
+internal class ScrollBarModel(
     private val width: Int = 15,
     private val color: Color = Color.lightGray,
     private val hoverColor: Color = Color.gray,
     private val dragColor: Color = Color(110, 110, 110),
     private val backgroundColor: Color = Color(230, 230, 230)
 ) {
-    data class Metrics(
-        val height: Int,
-        val y: Int,
-        val isVisible: Boolean
-    )
+    data class Metrics(val thumbSize: Int, val thumbPosition: Int, val isVisible: Boolean)
 
-    fun calculateMetrics(
-        componentHeight: Int,
-        contentHeight: Int,
-        scrollY: Int,
-        maxScrollY: Int
-    ): Metrics {
-        val calculatedScrollBarHeight = (componentHeight.toFloat() * componentHeight / contentHeight).roundToInt()
-        val scrollBarHeight = maxOf(calculatedScrollBarHeight, width)
-        val maxScrollBarY = componentHeight - scrollBarHeight
+    enum class Orientation {
+        Vertical, Horizontal
+    }
 
-        val scrollBarY = if (maxScrollBarY <= 0) {
-            0
-        } else {
-            (scrollY.toFloat() * maxScrollBarY / maxScrollY).roundToInt()
+    fun calculateMetrics(viewportSize: Int, contentSize: Int, scroll: Int, maxScroll: Int): Metrics {
+        if (contentSize <= viewportSize) {
+            return Metrics(thumbSize = 0, thumbPosition = 0, isVisible = false)
+        }
+
+        val thumbSize = maxOf(
+            (viewportSize.toFloat() * viewportSize / contentSize).roundToInt(), width
+        )
+        val maxThumbPosition = viewportSize - thumbSize
+
+        val thumbPosition = when {
+            maxThumbPosition <= 0 -> 0
+            maxScroll <= 0 -> 0
+            else -> (scroll.toFloat() * maxThumbPosition / maxScroll).roundToInt()
         }
 
         return Metrics(
-            height = scrollBarHeight,
-            y = scrollBarY,
-            isVisible = contentHeight > componentHeight
+            thumbSize = thumbSize, thumbPosition = thumbPosition, isVisible = true
         )
     }
 
-    fun isInScrollBarArea(
-        point: Point,
-        componentWidth: Int,
-        contentHeight: Int,
-        componentHeight: Int
-    ): Boolean {
-        return point.x >= componentWidth - width && contentHeight > componentHeight
-    }
-
-    fun isInScrollBarThumb(point: Point, metrics: Metrics): Boolean {
-        return point.y >= metrics.y && point.y <= metrics.y + metrics.height
-    }
-
     fun calculateScrollPositionFromClick(
-        clickY: Int,
-        metrics: Metrics,
-        componentHeight: Int,
-        maxScrollY: Int
+        click: Int, metrics: Metrics, viewportSize: Int, maxScroll: Int
     ): Int {
-        val clickPercent = (clickY - metrics.height / 2).toFloat() / (componentHeight - metrics.height)
-        return (clickPercent * maxScrollY).roundToInt().coerceIn(0, maxScrollY)
+        val clickPercent = (click - metrics.thumbSize / 2).toFloat() / (viewportSize - metrics.thumbSize)
+        return (clickPercent * maxScroll).roundToInt().coerceIn(0, maxScroll)
     }
 
-    fun paint(
+    fun paintScrollBar(
         g: Graphics,
-        componentWidth: Int,
-        componentHeight: Int,
+        orientation: Orientation,
+        x: Int,
+        y: Int,
+        length: Int,
         metrics: Metrics,
         isHovered: Boolean,
         isDragging: Boolean
@@ -75,19 +58,27 @@ class ScrollBarModel(
         if (!metrics.isVisible) return
 
         g.color = backgroundColor
-        g.fillRect(componentWidth - width, 0, width, componentHeight)
+        when (orientation) {
+            Orientation.Vertical -> g.fillRect(x, y, width, length)
+            Orientation.Horizontal -> g.fillRect(x, y, length, width)
+        }
 
         g.color = when {
             isDragging -> dragColor
             isHovered -> hoverColor
             else -> color
         }
-        g.fillRect(
-            componentWidth - width + 2,
-            metrics.y,
-            width - 4,
-            metrics.height
-        )
+
+        val padding = 2
+        when (orientation) {
+            Orientation.Vertical -> g.fillRect(
+                x + padding, y + metrics.thumbPosition, width - 2 * padding, metrics.thumbSize
+            )
+
+            Orientation.Horizontal -> g.fillRect(
+                x + metrics.thumbPosition, y + padding, metrics.thumbSize, width - 2 * padding
+            )
+        }
     }
 
     fun getWidth(): Int = width
