@@ -20,7 +20,8 @@ internal class TextRenderer(
         val scrollY: Int = 0,
         val width: Int = 0,
         val height: Int = 0,
-        val caretVisible: Boolean = true
+        val caretVisible: Boolean = true,
+        val lineNumbersWidth: Int = 0
     )
 
     data class VisibleContent(
@@ -94,9 +95,13 @@ internal class TextRenderer(
             viewportHeight = context.height
         )
 
-        context.graphics.translate(-context.scrollX, -context.scrollY)
+        context.graphics.translate(
+            -context.scrollX + context.lineNumbersWidth, -context.scrollY
+        )
         renderContent(context, visibleContent)
-        context.graphics.translate(context.scrollX, context.scrollY)
+        context.graphics.translate(
+            context.scrollX - context.lineNumbersWidth, context.scrollY
+        )
     }
 
     private fun renderContent(

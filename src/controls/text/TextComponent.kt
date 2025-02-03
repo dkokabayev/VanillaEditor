@@ -20,7 +20,7 @@ abstract class TextComponent(
     private val newLineChar: Char,
     fontColor: Color,
     selectionColor: Color,
-    private val padding: Int,
+    protected val padding: Int,
 ) : JComponent() {
     private val undoManager = UndoManager()
     private val caretBlinkTimer: Timer

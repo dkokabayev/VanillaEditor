@@ -19,6 +19,7 @@ class TextArea(
     selectionColor: Color = Color.PINK,
     newLineChar: Char = '\n',
     padding: Int = 5,
+    lineNumbersVisible: Boolean = true,
     scrollBarWidth: Int = 15,
     scrollBarColor: Color = Color.lightGray,
     scrollBarHoverColor: Color = Color.gray,
@@ -36,6 +37,10 @@ class TextArea(
     selectionColor,
     padding
 ) {
+    private val lineNumbersRenderer = LineNumbersRenderer(font, Color.GRAY).apply {
+        isVisible = lineNumbersVisible
+        onVisibilityChanged = { repaint() }
+    }
     private val scrollModel = ScrollModel()
     private val verticalScrollBar = ScrollBarModel(
         width = scrollBarWidth,
@@ -52,7 +57,15 @@ class TextArea(
         backgroundColor = scrollBarBackgroundColor
     )
 
+    var lineNumbersVisible: Boolean
+        get() = lineNumbersRenderer.isVisible
+        set(value) {
+            lineNumbersRenderer.isVisible = value
+        }
+
     init {
+        lineNumbersRenderer.onVisibilityChanged = { repaint() }
+
         addMouseWheelListener { e ->
             if (e.isShiftDown) {
                 val scrollAmount = e.preciseWheelRotation * getFontMetrics(font).charWidth('m')
@@ -216,8 +229,12 @@ class TextArea(
     }
 
     override fun getPositionFromPoint(point: Point): Int {
+        val fm = getFontMetrics(font)
+        val lineCount = textBuffer.getAllLines().size
+        val lineNumbersWidth = lineNumbersRenderer.getWidth(lineCount, fm)
+
         val adjustedPoint = Point(
-            point.x + scrollModel.scrollX, point.y + scrollModel.scrollY
+            point.x - lineNumbersWidth + scrollModel.scrollX, point.y + scrollModel.scrollY
         )
         return super.getPositionFromPoint(adjustedPoint)
     }
@@ -267,6 +284,14 @@ class TextArea(
     private fun paintContent(g: Graphics) {
         val clipBounds = g.clipBounds ?: Rectangle(0, 0, width, height)
         val contentClip = Rectangle(clipBounds)
+        val fm = g.fontMetrics
+
+        val lineCount = textBuffer.getAllLines().size
+        val lineNumbersWidth = if (lineNumbersRenderer.isVisible) {
+            lineNumbersRenderer.getWidth(lineCount, fm)
+        } else {
+            0
+        }
 
         var needsVerticalBar = getContentHeight() > height
         var needsHorizontalBar = getContentWidth() > width
@@ -281,16 +306,29 @@ class TextArea(
             needsVerticalBar = getContentHeight() > remainingHeight
         }
 
+        contentClip.x = lineNumbersWidth
         contentClip.width = if (needsVerticalBar) {
-            width - verticalScrollBar.getWidth()
+            width - verticalScrollBar.getWidth() - lineNumbersWidth
         } else {
-            width
+            width - lineNumbersWidth
         }
 
         contentClip.height = if (needsHorizontalBar) {
             height - horizontalScrollBar.getWidth()
         } else {
             height
+        }
+
+        if (lineNumbersRenderer.isVisible) {
+            lineNumbersRenderer.paint(
+                g = g,
+                lineCount = lineCount,
+                firstVisibleLine = scrollModel.scrollY / fm.height,
+                visibleLinesCount = contentClip.height / fm.height + 2,
+                fm = fm,
+                scrollY = scrollModel.scrollY,
+                width = lineNumbersWidth
+            )
         }
 
         g.clip = contentClip
@@ -302,7 +340,8 @@ class TextArea(
             scrollY = scrollModel.scrollY,
             width = contentClip.width,
             height = contentClip.height,
-            caretVisible = caretVisible
+            caretVisible = caretVisible,
+            lineNumbersWidth = lineNumbersWidth
         )
 
         textRenderer.render(context)
@@ -355,8 +394,15 @@ class TextArea(
 
     private fun getContentWidth(): Int {
         val fm = getFontMetrics(font)
+        val lineCount = textBuffer.getAllLines().size
+        val lineNumbersWidth = if (lineNumbersRenderer.isVisible) {
+            lineNumbersRenderer.getWidth(lineCount, fm)
+        } else {
+            0
+        }
+
         return textBuffer.getAllLines().maxOf { line ->
             fm.stringWidth(line.text)
-        }
+        } + lineNumbersWidth + padding * 2
     }
 }
