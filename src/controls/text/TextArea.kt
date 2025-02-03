@@ -18,7 +18,7 @@ class TextArea(
     fontColor: Color = Color.BLACK,
     selectionColor: Color = Color.PINK,
     newLineChar: Char = '\n',
-    private val padding: Int = 5,
+    padding: Int = 5,
     scrollBarWidth: Int = 15,
     scrollBarColor: Color = Color.lightGray,
     scrollBarHoverColor: Color = Color.gray,
@@ -233,14 +233,14 @@ class TextArea(
 
         scrollModel.scrollY = when {
             caretY < scrollModel.scrollY -> caretY
-            caretY + lineHeight > scrollModel.scrollY + (height - horizontalScrollBar.getWidth()) -> caretY + lineHeight + padding * 2 - (height - horizontalScrollBar.getWidth())
+            caretY + lineHeight > scrollModel.scrollY + (height - horizontalScrollBar.getWidth()) -> caretY + lineHeight - (height - horizontalScrollBar.getWidth())
 
             else -> scrollModel.scrollY
         }.coerceIn(0, scrollModel.maxScrollY)
 
         scrollModel.scrollX = when {
             caretX < scrollModel.scrollX -> caretX
-            caretX > scrollModel.scrollX + (width - verticalScrollBar.getWidth()) -> caretX + padding * 2 - (width - verticalScrollBar.getWidth())
+            caretX > scrollModel.scrollX + (width - verticalScrollBar.getWidth()) -> caretX - (width - verticalScrollBar.getWidth())
 
             else -> scrollModel.scrollX
         }.coerceIn(0, scrollModel.maxScrollX)
@@ -267,8 +267,32 @@ class TextArea(
     private fun paintContent(g: Graphics) {
         val clipBounds = g.clipBounds ?: Rectangle(0, 0, width, height)
         val contentClip = Rectangle(clipBounds)
-        contentClip.width = width - verticalScrollBar.getWidth()
-        contentClip.height = height - horizontalScrollBar.getWidth()
+
+        var needsVerticalBar = getContentHeight() > height
+        var needsHorizontalBar = getContentWidth() > width
+
+        if (needsVerticalBar) {
+            val remainingWidth = width - verticalScrollBar.getWidth()
+            needsHorizontalBar = getContentWidth() > remainingWidth
+        }
+
+        if (needsHorizontalBar) {
+            val remainingHeight = height - horizontalScrollBar.getWidth()
+            needsVerticalBar = getContentHeight() > remainingHeight
+        }
+
+        contentClip.width = if (needsVerticalBar) {
+            width - verticalScrollBar.getWidth()
+        } else {
+            width
+        }
+
+        contentClip.height = if (needsHorizontalBar) {
+            height - horizontalScrollBar.getWidth()
+        } else {
+            height
+        }
+
         g.clip = contentClip
 
         val context = TextRenderer.RenderContext(
@@ -276,8 +300,8 @@ class TextArea(
             clip = clipBounds,
             scrollX = scrollModel.scrollX,
             scrollY = scrollModel.scrollY,
-            width = width - verticalScrollBar.getWidth(),
-            height = height - horizontalScrollBar.getWidth(),
+            width = contentClip.width,
+            height = contentClip.height,
             caretVisible = caretVisible
         )
 
@@ -326,13 +350,13 @@ class TextArea(
 
     private fun getContentHeight(): Int {
         val fm = getFontMetrics(font)
-        return fm.height * textBuffer.getAllLines().size + padding * 2
+        return fm.height * textBuffer.getAllLines().size
     }
 
     private fun getContentWidth(): Int {
         val fm = getFontMetrics(font)
         return textBuffer.getAllLines().maxOf { line ->
             fm.stringWidth(line.text)
-        } + padding * 2
+        }
     }
 }
