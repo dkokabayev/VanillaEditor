@@ -15,16 +15,16 @@ abstract class TextComponent(
     repeatAccelerationFactor: Double,
     repeatMinDelay: Int,
     private val newLineChar: Char,
-    private val fontColor: Color,
-    private val selectionColor: Color,
+    protected val fontColor: Color,
+    protected val selectionColor: Color,
     private val padding: Int,
 ) : JComponent() {
 
     internal val textBuffer = TextBuffer(newLineChar)
     internal val caretModel = CaretModel(textBuffer)
-    private val selectionModel = SelectionModel(textBuffer)
+    internal val selectionModel = SelectionModel(textBuffer)
     private val undoManager = UndoManager()
-    private var caretVisible = true
+    protected var caretVisible = true
     private val caretBlinkTimer: Timer
     private var isMouseDragging = false
 
@@ -189,7 +189,7 @@ abstract class TextComponent(
         return textBuffer.length
     }
 
-    private fun getCaretCoordinates(fm: FontMetrics): Pair<Int, Int> {
+    protected fun getCaretCoordinates(fm: FontMetrics): Pair<Int, Int> {
         val caretPosition = caretModel.getCurrentPosition()
         val textBeforeCaret = textBuffer.getText().substring(0, caretPosition.offset)
         val splitBeforeCaret = textBeforeCaret.split(newLineChar)
