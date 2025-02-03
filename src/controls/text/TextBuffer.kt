@@ -1,30 +1,27 @@
 package controls.text
 
+import java.util.*
+
 internal class TextBuffer(val newLineChar: Char) {
     private val buffer = StringBuilder()
-    private val lineCache = mutableListOf<LineInfo>()
+    private val lineCache = TreeMap<Int, LineInfo>()
     private var lastKnownTextLength = 0
 
     val length: Int
         get() = buffer.length
 
     data class LineInfo(
-        val start: Int,
-        val end: Int,
-        val text: String
+        val start: Int, val end: Int, val text: String
     )
 
-    private fun updateLineCache() {
-        if (buffer.length == lastKnownTextLength) return
-
-        lineCache.clear()
-        var currentLineStart = 0
-        var currentPos = 0
+    private fun scanLines(startPos: Int, onLineFound: (start: Int, end: Int, text: String) -> Unit) {
+        var currentLineStart = startPos
+        var currentPos = startPos
 
         while (currentPos < buffer.length) {
             if (buffer[currentPos] == newLineChar) {
                 val lineText = buffer.substring(currentLineStart, currentPos)
-                lineCache.add(LineInfo(currentLineStart, currentPos, lineText))
+                onLineFound(currentLineStart, currentPos, lineText)
                 currentLineStart = currentPos + 1
             }
             currentPos++
@@ -32,7 +29,39 @@ internal class TextBuffer(val newLineChar: Char) {
 
         if (currentLineStart <= buffer.length) {
             val lineText = buffer.substring(currentLineStart, buffer.length)
-            lineCache.add(LineInfo(currentLineStart, buffer.length, lineText))
+            onLineFound(currentLineStart, buffer.length, lineText)
+        }
+    }
+
+    private fun updateLineCache() {
+        if (buffer.length == lastKnownTextLength) return
+
+        lineCache.clear()
+        if (buffer.isEmpty()) {
+            lineCache[0] = LineInfo(0, 0, "")
+        } else {
+            scanLines(0) { start, end, text ->
+                lineCache[start] = LineInfo(start, end, text)
+            }
+        }
+        lastKnownTextLength = buffer.length
+    }
+
+    private fun updateLineCacheIncrementally(changePosition: Int) {
+        if (lineCache.isEmpty() || changePosition == 0) {
+            updateLineCache()
+            return
+        }
+
+        val affectedEntry = lineCache.floorEntry(changePosition)
+        if (affectedEntry != null) {
+            lineCache.tailMap(affectedEntry.key).clear()
+
+            scanLines(affectedEntry.key) { start, end, text ->
+                lineCache[start] = LineInfo(start, end, text)
+            }
+        } else {
+            updateLineCache()
         }
 
         lastKnownTextLength = buffer.length
@@ -40,30 +69,23 @@ internal class TextBuffer(val newLineChar: Char) {
 
     fun findLineAt(position: Int): LineInfo {
         updateLineCache()
-
         val pos = position.coerceIn(0, length)
-        return lineCache.find { pos in it.start..it.end }
-            ?: lineCache.lastOrNull()
-            ?: LineInfo(0, 0, "")
+        return lineCache.floorEntry(pos)?.value ?: lineCache.firstEntry()?.value ?: LineInfo(0, 0, "")
     }
 
     fun findPreviousLine(currentLine: LineInfo): LineInfo? {
         updateLineCache()
-        val currentIndex = lineCache.indexOfFirst { it.start == currentLine.start }
-        if (currentIndex <= 0) return null
-        return lineCache[currentIndex - 1]
+        return lineCache.lowerEntry(currentLine.start)?.value
     }
 
     fun findNextLine(currentLine: LineInfo): LineInfo? {
         updateLineCache()
-        val currentIndex = lineCache.indexOfFirst { it.start == currentLine.start }
-        if (currentIndex == -1 || currentIndex >= lineCache.size - 1) return null
-        return lineCache[currentIndex + 1]
+        return lineCache.higherEntry(currentLine.start)?.value
     }
 
     fun getAllLines(): List<LineInfo> {
         updateLineCache()
-        return lineCache.toList()
+        return lineCache.values.toList()
     }
 
     fun getText(): String = buffer.toString()
@@ -71,19 +93,26 @@ internal class TextBuffer(val newLineChar: Char) {
     fun charAt(index: Int): Char = buffer[index]
 
     fun insertChar(char: Char, position: Int) {
+        require(position in 0..buffer.length) {
+            "Position $position is out of bounds (0..${buffer.length})"
+        }
         buffer.insert(position, char)
-        lastKnownTextLength = -1
+        updateLineCacheIncrementally(position)
     }
 
     fun deleteCharAt(position: Int) {
+        require(position in 0 until buffer.length) {
+            "Position $position is out of bounds (0..${buffer.length - 1})"
+        }
         buffer.deleteCharAt(position)
-        lastKnownTextLength = -1
+        updateLineCacheIncrementally(position)
     }
 
     fun clear() {
         buffer.setLength(0)
         lineCache.clear()
         lastKnownTextLength = 0
+        lineCache[0] = LineInfo(0, 0, "")
     }
 
     fun getLines(): List<String> = getAllLines().map { it.text }
