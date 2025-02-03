@@ -75,5 +75,5 @@ internal fun TextBuffer.deleteChar(
         this.deleteCharAt(position)
     }
 
-    return null;
+    return null
 }

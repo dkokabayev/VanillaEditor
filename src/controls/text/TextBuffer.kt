@@ -101,7 +101,7 @@ internal class TextBuffer(val newLineChar: Char) {
     }
 
     fun deleteCharAt(position: Int) {
-        require(position in 0 until buffer.length) {
+        require(position in buffer.indices) {
             "Position $position is out of bounds (0..${buffer.length - 1})"
         }
         buffer.deleteCharAt(position)

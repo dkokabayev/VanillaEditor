@@ -78,7 +78,7 @@ public class LargeJavaClass {
             default -> "Other";
         };
     }
-}""";
+}"""
 
         frame.add(JScrollPane(textComponent), BorderLayout.CENTER)
 

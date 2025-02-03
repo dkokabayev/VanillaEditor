@@ -17,8 +17,7 @@ internal class UndoManager {
 
         isUndoInProgress = true
         try {
-            val edit = undoStack.removeAt(undoStack.lastIndex)
-            when (edit) {
+            when (val edit = undoStack.removeAt(undoStack.lastIndex)) {
                 is TextAction.Insert -> {
                     for (i in edit.text.length - 1 downTo 0) {
                         textBuffer.deleteCharAt(edit.position)
@@ -28,7 +27,7 @@ internal class UndoManager {
                 }
 
                 is TextAction.Delete -> {
-                    for (i in 0 until edit.text.length) {
+                    for (i in 0..<edit.text.length) {
                         textBuffer.insertChar(edit.text[i], edit.position + i)
                     }
                     caretModel.moveTo(edit.caretPosition)
@@ -46,10 +45,9 @@ internal class UndoManager {
 
         isUndoInProgress = true
         try {
-            val edit = redoStack.removeAt(redoStack.lastIndex)
-            when (edit) {
+            when (val edit = redoStack.removeAt(redoStack.lastIndex)) {
                 is TextAction.Insert -> {
-                    for (i in 0 until edit.text.length) {
+                    for (i in 0..<edit.text.length) {
                         textBuffer.insertChar(edit.text[i], edit.position + i)
                     }
                     caretModel.moveTo(edit.position + edit.text.length)

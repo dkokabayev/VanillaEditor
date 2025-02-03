@@ -42,10 +42,6 @@ internal class SelectionModel(private val textBuffer: TextBuffer) {
 
     fun getSelectedText(): String = getCurrentSelection()?.text ?: ""
 
-    fun getSelectionBounds(): Pair<Int, Int>? = getCurrentSelection()?.let {
-        Pair(it.start, it.end)
-    }
-
     fun selectWord(position: Int): Pair<Int, Int> {
         val text = textBuffer.getText()
         if (text.isEmpty()) {
