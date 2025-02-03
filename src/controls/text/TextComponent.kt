@@ -358,6 +358,7 @@ abstract class TextComponent(
             }
 
             val position = caretModel.getCurrentPosition()
+            undoManager.addEdit(TextAction.Insert(position.offset, newLineChar.toString(), position.offset))
             textBuffer.insertChar(newLineChar, position.offset)
             caretModel.moveRight()
         }
