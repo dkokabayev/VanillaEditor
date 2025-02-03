@@ -1,24 +1,12 @@
 package controls.text
 
-import java.awt.Point
-
 internal class ScrollModel {
     var scrollY = 0
     var maxScrollY = 0
     var isHovered = false
     var isDragging = false
-    var lastDragY = 0
-    var dragStartScrollY = 0
-
-    fun updateHover(point: Point, width: Int, scrollBarWidth: Int, contentHeight: Int, componentHeight: Int): Boolean {
-        val wasHovered = isHovered
-        isHovered = isInScrollBar(point, width, scrollBarWidth, contentHeight, componentHeight)
-        return wasHovered != isHovered
-    }
-
-    private fun isInScrollBar(point: Point, width: Int, scrollBarWidth: Int, contentHeight: Int, componentHeight: Int): Boolean {
-        return point.x >= width - scrollBarWidth && contentHeight > componentHeight
-    }
+    private var lastDragY = 0
+    private var dragStartScrollY = 0
 
     fun startDragging(y: Int) {
         isDragging = true
@@ -38,4 +26,3 @@ internal class ScrollModel {
         }
     }
 }
-

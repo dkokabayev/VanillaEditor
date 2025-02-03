@@ -5,18 +5,31 @@ internal class CaretModel(private val textBuffer: TextBuffer) {
         private set
 
     fun getCurrentPosition(): CaretPosition {
-        val text = textBuffer.getText()
-        val lineStart = text.lastIndexOf(textBuffer.newLineChar, position - 1) + 1
-        val lineEnd = text.indexOf(textBuffer.newLineChar, position).let {
-            if (it == -1) text.length else it
-        }
-
+        val lineInfo = textBuffer.findLineAt(position)
         return CaretPosition(
             offset = position,
-            start = lineStart,
-            end = lineEnd,
-            text = text.substring(lineStart, lineEnd)
+            start = lineInfo.start,
+            end = lineInfo.end,
+            text = lineInfo.text
         )
+    }
+
+    fun moveUpWithOption() {
+        val currentLine = textBuffer.findLineAt(position)
+        val columnOffset = position - currentLine.start
+
+        textBuffer.findPreviousLine(currentLine)?.let { prevLine ->
+            position = prevLine.start + minOf(columnOffset, prevLine.end - prevLine.start)
+        }
+    }
+
+    fun moveDownWithOption() {
+        val currentLine = textBuffer.findLineAt(position)
+        val columnOffset = position - currentLine.start
+
+        textBuffer.findNextLine(currentLine)?.let { nextLine ->
+            position = nextLine.start + minOf(columnOffset, nextLine.end - nextLine.start)
+        }
     }
 
     fun moveTo(newPosition: Int) {
@@ -90,11 +103,11 @@ internal class CaretModel(private val textBuffer: TextBuffer) {
     }
 
     fun moveToLineStart() {
-        position = getCurrentPosition().start
+        position = textBuffer.findLineAt(position).start
     }
 
     fun moveToLineEnd() {
-        position = getCurrentPosition().end
+        position = textBuffer.findLineAt(position).end
     }
 
     fun moveToTextStart() {
@@ -104,37 +117,4 @@ internal class CaretModel(private val textBuffer: TextBuffer) {
     fun moveToTextEnd() {
         position = textBuffer.length
     }
-
-    fun moveUpWithOption() {
-        val currentPos = getCurrentPosition()
-
-        if (position > currentPos.start) {
-            position = currentPos.start
-            return
-        }
-
-        if (currentPos.start > 0) {
-            val previousLineEnd = currentPos.start - 1
-            val previousLineStart = textBuffer.getText().lastIndexOf(textBuffer.newLineChar, previousLineEnd - 1) + 1
-            position = previousLineStart
-        }
-    }
-
-    fun moveDownWithOption() {
-        val currentPos = getCurrentPosition()
-
-        if (position < currentPos.end) {
-            position = currentPos.end
-            return
-        }
-
-        if (currentPos.end < textBuffer.length) {
-            val nextLineStart = currentPos.end + 1
-            val nextLineEnd = textBuffer.getText().indexOf(textBuffer.newLineChar, nextLineStart).let {
-                if (it == -1) textBuffer.length else it
-            }
-            position = nextLineEnd
-        }
-    }
 }
-

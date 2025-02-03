@@ -9,6 +9,19 @@ internal class SelectionModel(private val textBuffer: TextBuffer) {
     val hasSelection: Boolean
         get() = selectionStart != -1 && selectionEnd != -1
 
+    data class SelectionBounds(
+        val start: Int, val end: Int, val text: String
+    )
+
+    fun getCurrentSelection(): SelectionBounds? {
+        if (!hasSelection) return null
+        val start = minOf(selectionStart, selectionEnd)
+        val end = maxOf(selectionStart, selectionEnd)
+        return SelectionBounds(
+            start = start, end = end, text = textBuffer.getText().substring(start, end)
+        )
+    }
+
     fun startSelection(position: Int) {
         selectionStart = position.coerceIn(0, textBuffer.length)
         selectionEnd = selectionStart
@@ -27,19 +40,10 @@ internal class SelectionModel(private val textBuffer: TextBuffer) {
         selectionEnd = -1
     }
 
-    fun getSelectedText(): String {
-        if (!hasSelection) return ""
-        val start = minOf(selectionStart, selectionEnd)
-        val end = maxOf(selectionStart, selectionEnd)
-        return textBuffer.getText().substring(start, end)
-    }
+    fun getSelectedText(): String = getCurrentSelection()?.text ?: ""
 
-    fun getSelectionBounds(): Pair<Int, Int>? {
-        if (!hasSelection) return null
-        return Pair(
-            minOf(selectionStart, selectionEnd),
-            maxOf(selectionStart, selectionEnd)
-        )
+    fun getSelectionBounds(): Pair<Int, Int>? = getCurrentSelection()?.let {
+        Pair(it.start, it.end)
     }
 
     fun selectWord(position: Int): Pair<Int, Int> {
