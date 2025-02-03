@@ -339,8 +339,13 @@ abstract class TextComponent(
 
             when (clickCount) {
                 1 -> {
-                    if (e.isShiftDown && selectionModel.hasSelection) {
+                    if (e.isShiftDown) {
+                        if (!selectionModel.hasSelection) {
+                            val currentPosition = caretModel.getCurrentPosition().offset
+                            selectionModel.startSelection(currentPosition)
+                        }
                         selectionModel.updateSelection(position)
+                        caretModel.moveTo(position)
                     } else {
                         caretModel.moveTo(position)
                         selectionModel.startSelection(position)
