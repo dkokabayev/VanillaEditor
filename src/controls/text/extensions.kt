@@ -32,9 +32,8 @@ internal fun SelectionModel.deleteSelectedText(
         )
     )
 
-    for (i in selection.end - 1 downTo selection.start) {
-        textBuffer.deleteCharAt(i)
-    }
+    textBuffer.deleteRange(selection.start, selection.end)
+
     caretModel.moveTo(selection.start)
     clearSelection()
 

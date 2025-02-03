@@ -108,6 +108,15 @@ internal class TextBuffer(val newLineChar: Char) {
         updateLineCacheIncrementally(position)
     }
 
+    fun deleteRange(start: Int, end: Int) {
+        require(start in 0..length && end in start..length) {
+            "Invalid range: $start..$end (buffer length: $length)"
+        }
+
+        buffer.delete(start, end)
+        updateLineCacheIncrementally(start)
+    }
+
     fun clear() {
         buffer.setLength(0)
         lineCache.clear()
