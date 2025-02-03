@@ -31,6 +31,15 @@ abstract class TextComponent(
     private var deletionPressed = false
     private var deletionRepeatTimer: Timer? = null
     private var deletionPressStartTime: Long = 0
+
+    private var undoPressed = false
+    private var undoRepeatTimer: Timer? = null
+    private var undoPressStartTime: Long = 0
+
+    private var redoPressed = false
+    private var redoRepeatTimer: Timer? = null
+    private var redoPressStartTime: Long = 0
+
     private var isMouseDragging = false
 
     init {
@@ -197,8 +206,17 @@ abstract class TextComponent(
                 KeyEvent.VK_C -> e.handleClipboardCopy(selectionModel)
                 KeyEvent.VK_X -> e.handleClipboardCut(selectionModel, textBuffer, caretModel, undoManager)
                 KeyEvent.VK_V -> e.handleClipboardPaste(selectionModel, textBuffer, caretModel, undoManager)
-                KeyEvent.VK_Z -> handleUndo(e)
-                KeyEvent.VK_Y -> handleRedo(e)
+                KeyEvent.VK_Z -> {
+                    if (e.isControlDown || e.isMetaDown) {
+                        handleUndoPressed()
+                    }
+                }
+
+                KeyEvent.VK_Y -> {
+                    if (e.isControlDown || e.isMetaDown) {
+                        handleRedoPressed()
+                    }
+                }
             }
 
             ensureCaretVisible()
@@ -217,22 +235,77 @@ abstract class TextComponent(
             restartCaretBlinking()
         }
 
-        private fun handleUndo(e: KeyEvent) {
-            if (e.isControlDown || e.isMetaDown) {
+        private fun handleUndoPressed() {
+            if (!undoPressed) {
+                undoPressed = true
+                undoPressStartTime = System.currentTimeMillis()
+
                 if (undoManager.undo(textBuffer, caretModel)) {
                     selectionModel.clearSelection()
                     repaint()
                 }
+
+                startUndoRepeatTimer()
             }
         }
 
-        private fun handleRedo(e: KeyEvent) {
-            if (e.isControlDown || e.isMetaDown) {
+        private fun handleRedoPressed() {
+            if (!redoPressed) {
+                redoPressed = true
+                redoPressStartTime = System.currentTimeMillis()
+
                 if (undoManager.redo(textBuffer, caretModel)) {
                     selectionModel.clearSelection()
                     repaint()
                 }
+
+                startRedoRepeatTimer()
             }
+        }
+
+        private fun calculateCurrentDelay(startTime: Long): Int {
+            val elapsedTime = System.currentTimeMillis() - startTime
+            val factor = exp(-repeatAccelerationFactor * elapsedTime / 1000.0)
+            val currentRate = (repeatInitialDelay * factor + repeatMinDelay).toInt()
+            return currentRate.coerceIn(repeatMinDelay, repeatInitialDelay)
+        }
+
+        private fun startUndoRepeatTimer() {
+            undoRepeatTimer?.stop()
+            undoRepeatTimer = Timer(repeatInitialDelay) {
+                if (undoPressed) {
+                    if (undoManager.undo(textBuffer, caretModel)) {
+                        selectionModel.clearSelection()
+                        repaint()
+                    }
+
+                    val currentDelay = calculateCurrentDelay(undoPressStartTime)
+                    undoRepeatTimer?.delay = currentDelay
+                } else {
+                    undoRepeatTimer?.stop()
+                    undoRepeatTimer = null
+                }
+            }.apply { start() }
+            restartCaretBlinking()
+        }
+
+        private fun startRedoRepeatTimer() {
+            redoRepeatTimer?.stop()
+            redoRepeatTimer = Timer(repeatInitialDelay) {
+                if (redoPressed) {
+                    if (undoManager.redo(textBuffer, caretModel)) {
+                        selectionModel.clearSelection()
+                        repaint()
+                    }
+
+                    val currentDelay = calculateCurrentDelay(redoPressStartTime)
+                    redoRepeatTimer?.delay = currentDelay
+                } else {
+                    redoRepeatTimer?.stop()
+                    redoRepeatTimer = null
+                }
+            }.apply { start() }
+            restartCaretBlinking()
         }
 
         private fun handleAKey(e: KeyEvent) {
@@ -343,10 +416,28 @@ abstract class TextComponent(
         }
 
         override fun keyReleased(e: KeyEvent) {
-            if (e.keyCode == KeyEvent.VK_BACK_SPACE || e.keyCode == KeyEvent.VK_DELETE) {
-                deletionPressed = false
-                deletionRepeatTimer?.stop()
-                deletionRepeatTimer = null
+            when (e.keyCode) {
+                KeyEvent.VK_BACK_SPACE, KeyEvent.VK_DELETE -> {
+                    deletionPressed = false
+                    deletionRepeatTimer?.stop()
+                    deletionRepeatTimer = null
+                }
+
+                KeyEvent.VK_Z -> {
+                    if (undoPressed) {
+                        undoPressed = false
+                        undoRepeatTimer?.stop()
+                        undoRepeatTimer = null
+                    }
+                }
+
+                KeyEvent.VK_Y -> {
+                    if (redoPressed) {
+                        redoPressed = false
+                        redoRepeatTimer?.stop()
+                        redoRepeatTimer = null
+                    }
+                }
             }
         }
 
