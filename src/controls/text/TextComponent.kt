@@ -4,7 +4,6 @@ import java.awt.*
 import java.awt.event.*
 import javax.swing.JComponent
 import javax.swing.Timer
-import kotlin.math.exp
 
 private const val MULTI_CLICK_TIMEOUT_MS = 500
 
@@ -12,9 +11,9 @@ abstract class TextComponent(
     fontName: String,
     fontSize: Int,
     caretBlinkRate: Int,
-    private val repeatInitialDelay: Int,
-    private val repeatAccelerationFactor: Double,
-    private val repeatMinDelay: Int,
+    repeatInitialDelay: Int,
+    repeatAccelerationFactor: Double,
+    repeatMinDelay: Int,
     private val newLineChar: Char,
     private val fontColor: Color,
     private val selectionColor: Color,
@@ -27,20 +26,41 @@ abstract class TextComponent(
     private val undoManager = UndoManager()
     private var caretVisible = true
     private val caretBlinkTimer: Timer
-
-    private var deletionPressed = false
-    private var deletionRepeatTimer: Timer? = null
-    private var deletionPressStartTime: Long = 0
-
-    private var undoPressed = false
-    private var undoRepeatTimer: Timer? = null
-    private var undoPressStartTime: Long = 0
-
-    private var redoPressed = false
-    private var redoRepeatTimer: Timer? = null
-    private var redoPressStartTime: Long = 0
-
     private var isMouseDragging = false
+
+    private val backspaceAction = RepeatableAction(
+        initialDelay = repeatInitialDelay, accelerationFactor = repeatAccelerationFactor, minDelay = repeatMinDelay
+    ) {
+        val position = caretModel.getCurrentPosition()
+        textBuffer.deleteChar(position.offset, true, undoManager, caretModel)
+        repaint()
+    }
+
+    private val deleteAction = RepeatableAction(
+        initialDelay = repeatInitialDelay, accelerationFactor = repeatAccelerationFactor, minDelay = repeatMinDelay
+    ) {
+        val position = caretModel.getCurrentPosition()
+        textBuffer.deleteChar(position.offset, false, undoManager, caretModel)
+        repaint()
+    }
+
+    private val undoAction = RepeatableAction(
+        initialDelay = repeatInitialDelay, accelerationFactor = repeatAccelerationFactor, minDelay = repeatMinDelay
+    ) {
+        if (undoManager.undo(textBuffer, caretModel)) {
+            selectionModel.clearSelection()
+            repaint()
+        }
+    }
+
+    private val redoAction = RepeatableAction(
+        initialDelay = repeatInitialDelay, accelerationFactor = repeatAccelerationFactor, minDelay = repeatMinDelay
+    ) {
+        if (undoManager.redo(textBuffer, caretModel)) {
+            selectionModel.clearSelection()
+            repaint()
+        }
+    }
 
     init {
         font = Font(fontName, Font.PLAIN, fontSize)
@@ -191,8 +211,6 @@ abstract class TextComponent(
     private inner class TextKeyListener : KeyAdapter() {
         override fun keyPressed(e: KeyEvent) {
             when (e.keyCode) {
-                KeyEvent.VK_BACK_SPACE -> handleCharDelete(true)
-                KeyEvent.VK_DELETE -> handleCharDelete(false)
                 KeyEvent.VK_LEFT -> handleLeftKey(e)
                 KeyEvent.VK_RIGHT -> handleRightKey(e)
                 KeyEvent.VK_UP -> handleUpKey(e)
@@ -206,15 +224,31 @@ abstract class TextComponent(
                 KeyEvent.VK_C -> e.handleClipboardCopy(selectionModel)
                 KeyEvent.VK_X -> e.handleClipboardCut(selectionModel, textBuffer, caretModel, undoManager)
                 KeyEvent.VK_V -> e.handleClipboardPaste(selectionModel, textBuffer, caretModel, undoManager)
+                KeyEvent.VK_BACK_SPACE -> {
+                    if (selectionModel.hasSelection) {
+                        selectionModel.deleteSelectedText(textBuffer, caretModel, undoManager)
+                    } else {
+                        backspaceAction.start()
+                    }
+                }
+
+                KeyEvent.VK_DELETE -> {
+                    if (selectionModel.hasSelection) {
+                        selectionModel.deleteSelectedText(textBuffer, caretModel, undoManager)
+                    } else {
+                        deleteAction.start()
+                    }
+                }
+
                 KeyEvent.VK_Z -> {
                     if (e.isControlDown || e.isMetaDown) {
-                        handleUndoPressed()
+                        undoAction.start()
                     }
                 }
 
                 KeyEvent.VK_Y -> {
                     if (e.isControlDown || e.isMetaDown) {
-                        handleRedoPressed()
+                        redoAction.start()
                     }
                 }
             }
@@ -235,99 +269,12 @@ abstract class TextComponent(
             restartCaretBlinking()
         }
 
-        private fun handleUndoPressed() {
-            if (!undoPressed) {
-                undoPressed = true
-                undoPressStartTime = System.currentTimeMillis()
-
-                if (undoManager.undo(textBuffer, caretModel)) {
-                    selectionModel.clearSelection()
-                    repaint()
-                }
-
-                startUndoRepeatTimer()
-            }
-        }
-
-        private fun handleRedoPressed() {
-            if (!redoPressed) {
-                redoPressed = true
-                redoPressStartTime = System.currentTimeMillis()
-
-                if (undoManager.redo(textBuffer, caretModel)) {
-                    selectionModel.clearSelection()
-                    repaint()
-                }
-
-                startRedoRepeatTimer()
-            }
-        }
-
-        private fun calculateCurrentDelay(startTime: Long): Int {
-            val elapsedTime = System.currentTimeMillis() - startTime
-            val factor = exp(-repeatAccelerationFactor * elapsedTime / 1000.0)
-            val currentRate = (repeatInitialDelay * factor + repeatMinDelay).toInt()
-            return currentRate.coerceIn(repeatMinDelay, repeatInitialDelay)
-        }
-
-        private fun startUndoRepeatTimer() {
-            undoRepeatTimer?.stop()
-            undoRepeatTimer = Timer(repeatInitialDelay) {
-                if (undoPressed) {
-                    if (undoManager.undo(textBuffer, caretModel)) {
-                        selectionModel.clearSelection()
-                        repaint()
-                    }
-
-                    val currentDelay = calculateCurrentDelay(undoPressStartTime)
-                    undoRepeatTimer?.delay = currentDelay
-                } else {
-                    undoRepeatTimer?.stop()
-                    undoRepeatTimer = null
-                }
-            }.apply { start() }
-            restartCaretBlinking()
-        }
-
-        private fun startRedoRepeatTimer() {
-            redoRepeatTimer?.stop()
-            redoRepeatTimer = Timer(repeatInitialDelay) {
-                if (redoPressed) {
-                    if (undoManager.redo(textBuffer, caretModel)) {
-                        selectionModel.clearSelection()
-                        repaint()
-                    }
-
-                    val currentDelay = calculateCurrentDelay(redoPressStartTime)
-                    redoRepeatTimer?.delay = currentDelay
-                } else {
-                    redoRepeatTimer?.stop()
-                    redoRepeatTimer = null
-                }
-            }.apply { start() }
-            restartCaretBlinking()
-        }
-
         private fun handleAKey(e: KeyEvent) {
             if (e.isControlDown || e.isMetaDown) {
                 selectionModel.startSelection(0)
                 selectionModel.updateSelection(textBuffer.length)
                 caretModel.moveTo(textBuffer.length)
                 repaint()
-            }
-        }
-
-        private fun handleCharDelete(isBackspace: Boolean) {
-            if (!deletionPressed) {
-                deletionPressed = true
-                deletionPressStartTime = System.currentTimeMillis()
-
-                if (!selectionModel.deleteSelectedText(textBuffer, caretModel, undoManager)) {
-                    val position = caretModel.getCurrentPosition()
-                    textBuffer.deleteChar(position.offset, isBackspace, undoManager, caretModel)
-                }
-
-                startDeletionRepeatTimer(isBackspace)
             }
         }
 
@@ -417,27 +364,10 @@ abstract class TextComponent(
 
         override fun keyReleased(e: KeyEvent) {
             when (e.keyCode) {
-                KeyEvent.VK_BACK_SPACE, KeyEvent.VK_DELETE -> {
-                    deletionPressed = false
-                    deletionRepeatTimer?.stop()
-                    deletionRepeatTimer = null
-                }
-
-                KeyEvent.VK_Z -> {
-                    if (undoPressed) {
-                        undoPressed = false
-                        undoRepeatTimer?.stop()
-                        undoRepeatTimer = null
-                    }
-                }
-
-                KeyEvent.VK_Y -> {
-                    if (redoPressed) {
-                        redoPressed = false
-                        redoRepeatTimer?.stop()
-                        redoRepeatTimer = null
-                    }
-                }
+                KeyEvent.VK_BACK_SPACE -> backspaceAction.stop()
+                KeyEvent.VK_DELETE -> deleteAction.stop()
+                KeyEvent.VK_Z -> undoAction.stop()
+                KeyEvent.VK_Y -> redoAction.stop()
             }
         }
 
@@ -454,31 +384,6 @@ abstract class TextComponent(
                 ensureCaretVisible()
                 repaint()
             }
-        }
-
-        private fun calculateCurrentDelay(): Int {
-            val elapsedTime = System.currentTimeMillis() - deletionPressStartTime
-            val factor = exp(-repeatAccelerationFactor * elapsedTime / 1000.0)
-            val currentRate = (repeatInitialDelay * factor + repeatMinDelay).toInt()
-            return currentRate.coerceIn(repeatMinDelay, repeatInitialDelay)
-        }
-
-        private fun startDeletionRepeatTimer(isBackspace: Boolean) {
-            deletionRepeatTimer?.stop()
-            deletionRepeatTimer = Timer(repeatInitialDelay) {
-                if (deletionPressed) {
-                    val position = caretModel.getCurrentPosition()
-                    textBuffer.deleteChar(position.offset, isBackspace, undoManager, caretModel)
-                    repaint()
-
-                    val currentDelay = calculateCurrentDelay()
-                    deletionRepeatTimer?.delay = currentDelay
-                } else {
-                    deletionRepeatTimer?.stop()
-                    deletionRepeatTimer = null
-                }
-            }.apply { start() }
-            restartCaretBlinking()
         }
     }
 
