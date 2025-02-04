@@ -1,5 +1,6 @@
 import controls.text.TextArea
 import java.awt.Color
+import java.awt.event.KeyEvent
 import javax.swing.*
 import javax.swing.filechooser.FileNameExtensionFilter
 
@@ -22,6 +23,8 @@ class EditorFrame : JFrame() {
         const val THEMES_MENU_TITLE = "Themes"
         const val DARK_THEME_MENU_ITEM_TITLE = "Dark Theme"
         const val LIGHT_THEME_MENU_ITEM_TITLE = "Light Theme"
+        val COMMAND_OR_CTRL_MASK = if (System.getProperty("os.name").lowercase().contains("mac"))
+            KeyEvent.META_DOWN_MASK else KeyEvent.CTRL_DOWN_MASK
     }
 
     private val textArea: TextArea = TextArea(
@@ -73,10 +76,14 @@ class EditorFrame : JFrame() {
     }
 
     private fun createFileMenu(): JMenu {
-        val fileMenu = JMenu(FILE_MENU_TITLE)
+        val fileMenu = JMenu(FILE_MENU_TITLE).apply {
+            mnemonic = KeyEvent.VK_F
+        }
         fileMenu.background = Color.BLACK
 
         val openItem = JMenuItem(OPEN_FILE_MENU_ITEM_TITLE).apply {
+            accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_O, COMMAND_OR_CTRL_MASK)
+            mnemonic = KeyEvent.VK_O
             addActionListener {
                 val chooser = JFileChooser()
                 chooser.fileFilter = FileNameExtensionFilter(FILE_FILTER_DESCRIPTION, *FILE_EXTENSIONS)
@@ -87,6 +94,8 @@ class EditorFrame : JFrame() {
         }
 
         val saveItem = JMenuItem(SAVE_FILE_MENU_ITEM_TITLE).apply {
+            accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_S, COMMAND_OR_CTRL_MASK)
+            mnemonic = KeyEvent.VK_S
             addActionListener {
                 val chooser = JFileChooser()
                 chooser.fileFilter = FileNameExtensionFilter(FILE_FILTER_DESCRIPTION, *FILE_EXTENSIONS)
@@ -102,9 +111,13 @@ class EditorFrame : JFrame() {
     }
 
     private fun createViewMenu(): JMenu {
-        val viewMenu = JMenu(VIEW_MENU_TITLE)
+        val viewMenu = JMenu(VIEW_MENU_TITLE).apply {
+            mnemonic = KeyEvent.VK_V
+        }
 
         val showLineNumbersMenuItem = JCheckBoxMenuItem(SHOW_LINE_NUMBERS_MENU_ITEM_TITLE).apply {
+            accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_L, COMMAND_OR_CTRL_MASK)
+            mnemonic = KeyEvent.VK_L
             isSelected = textArea.lineNumbersVisible
             addActionListener { textArea.lineNumbersVisible = isSelected }
         }
@@ -112,6 +125,8 @@ class EditorFrame : JFrame() {
         viewMenu.add(showLineNumbersMenuItem)
 
         val colorSettingsItem = JMenuItem(COLOR_SETTINGS_MENU_ITEM_TITLE).apply {
+            accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_K, COMMAND_OR_CTRL_MASK)
+            mnemonic = KeyEvent.VK_C
             addActionListener {
                 ColorSettingsDialog(textArea).isVisible = true
             }
@@ -120,10 +135,19 @@ class EditorFrame : JFrame() {
         viewMenu.addSeparator()
         viewMenu.add(colorSettingsItem)
 
-        val themesMenu = JMenu(THEMES_MENU_TITLE)
+        val themesMenu = JMenu(THEMES_MENU_TITLE).apply {
+            mnemonic = KeyEvent.VK_T
+        }
 
-        val darkThemeItem = JRadioButtonMenuItem(DARK_THEME_MENU_ITEM_TITLE, true)
-        val lightThemeItem = JRadioButtonMenuItem(LIGHT_THEME_MENU_ITEM_TITLE, false)
+        val darkThemeItem = JRadioButtonMenuItem(DARK_THEME_MENU_ITEM_TITLE, true).apply {
+            accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_D, COMMAND_OR_CTRL_MASK or KeyEvent.SHIFT_DOWN_MASK)
+            mnemonic = KeyEvent.VK_D
+        }
+
+        val lightThemeItem = JRadioButtonMenuItem(LIGHT_THEME_MENU_ITEM_TITLE, false).apply {
+            accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_L, COMMAND_OR_CTRL_MASK or KeyEvent.SHIFT_DOWN_MASK)
+            mnemonic = KeyEvent.VK_L
+        }
 
         val themeGroup = ButtonGroup()
         themeGroup.add(darkThemeItem)
