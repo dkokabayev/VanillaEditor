@@ -23,7 +23,7 @@ abstract class TextComponent(
 
         object Font {
             const val NAME = "Monospaced"
-            const val SIZE = 14
+            const val SIZE = 13
             val COLOR: Color = Color.BLACK
             val SELECTION_COLOR: Color = Color.PINK
         }
