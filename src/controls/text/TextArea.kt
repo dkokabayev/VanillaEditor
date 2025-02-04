@@ -37,10 +37,7 @@ class TextArea(
     selectionColor,
     padding
 ) {
-    private val lineNumbersRenderer = LineNumbersRenderer(font, Color.GRAY).apply {
-        isVisible = lineNumbersVisible
-        onVisibilityChanged = { repaint() }
-    }
+    private val lineNumbersRenderer = LineNumbersRenderer(lineNumbersVisible, font, Color.GRAY)
     private val scrollModel = ScrollModel()
     private val verticalScrollBar = ScrollBarModel(
         width = scrollBarWidth,
@@ -57,15 +54,14 @@ class TextArea(
         backgroundColor = scrollBarBackgroundColor
     )
 
-    var lineNumbersVisible: Boolean
-        get() = lineNumbersRenderer.isVisible
+    var lineNumbersVisible = lineNumbersVisible
         set(value) {
+            field = value
             lineNumbersRenderer.isVisible = value
+            repaint()
         }
 
     init {
-        lineNumbersRenderer.onVisibilityChanged = { repaint() }
-
         addMouseWheelListener { e ->
             if (e.isShiftDown) {
                 val scrollAmount = e.preciseWheelRotation * getFontMetrics(font).charWidth('m')

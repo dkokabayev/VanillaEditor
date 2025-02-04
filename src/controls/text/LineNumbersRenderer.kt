@@ -6,21 +6,12 @@ import java.awt.FontMetrics
 import java.awt.Graphics
 
 internal class LineNumbersRenderer(
+    var isVisible: Boolean = true,
     private val font: Font,
     private val color: Color = Color.GRAY,
     private val padding: Int = 5,
     private val backgroundColor: Color = Color(230, 230, 230)
 ) {
-    var isVisible: Boolean = true
-        set(value) {
-            if (field != value) {
-                field = value
-                onVisibilityChanged?.invoke(value)
-            }
-        }
-
-    var onVisibilityChanged: ((Boolean) -> Unit)? = null
-
     fun getWidth(lineCount: Int, fm: FontMetrics): Int {
         if (!isVisible) return 0
         return fm.stringWidth(lineCount.toString()) + padding * 2
