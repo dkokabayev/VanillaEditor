@@ -40,7 +40,7 @@ class TextRenderer(
     )
 
     data class CharRange(
-        val start: Int, val end: Int
+        val start: Int, val end: Int, val xOffset: Int = 0
     )
 
     private fun calculateVisibleContent(
@@ -74,11 +74,16 @@ class TextRenderer(
     private fun calculateVisibleCharRange(
         text: String, fm: FontMetrics, scrollX: Int, viewportWidth: Int
     ): CharRange {
-        if (text.isEmpty()) return CharRange(0, 0)
+        if (text.isEmpty()) return CharRange(0, 0, 0)
 
         var currentWidth = 0
+        var xOffset = 0
+
         val startChar = text.indices.firstOrNull { index ->
             currentWidth += fm.charWidth(text[index])
+            if (currentWidth <= scrollX) {
+                xOffset = currentWidth
+            }
             currentWidth > scrollX
         } ?: 0
 
@@ -90,7 +95,7 @@ class TextRenderer(
             } else true
         } ?: text.length
 
-        return CharRange(startChar, endChar)
+        return CharRange(startChar, endChar, xOffset)
     }
 
     fun render(context: RenderContext) {
@@ -111,13 +116,22 @@ class TextRenderer(
         )
     }
 
+    private fun calculateStringWidth(text: String, end: Int, fm: FontMetrics): Int {
+        var width = 0
+        for (i in 0 until end) {
+            width += fm.charWidth(text[i])
+        }
+        return width
+    }
+
     private fun renderContent(
         context: RenderContext, visibleContent: VisibleContent
     ) {
         val g = context.graphics
         val (firstVisibleLine, visibleLines, lineHeight, fm, visibleCharRanges) = visibleContent
+        val selection = selectionModel.getCurrentSelection()
 
-        selectionModel.getCurrentSelection()?.let { selection ->
+        if (selection != null) {
             g.color = selectionColor
             renderSelection(g, visibleContent, selection.start, selection.end)
         }
@@ -125,19 +139,14 @@ class TextRenderer(
         var y = (firstVisibleLine * lineHeight) + fm.ascent + padding
 
         for ((line, charRange) in visibleLines.zip(visibleCharRanges)) {
+            val startX = padding + charRange.xOffset
             if (line.text.isNotEmpty() && charRange.end > charRange.start) {
-                var x = padding
-                if (charRange.start > 0) {
-                    x += fm.stringWidth(line.text.substring(0, charRange.start))
-                }
-
-                val visibleText = line.text.substring(charRange.start, charRange.end)
 
                 if (syntaxHighlighter != null) {
-                    renderHighlightedText(g, visibleText, x, y)
+                    renderHighlightedText(g, line.text, startX, y, charRange.start, charRange.end)
                 } else {
                     g.color = foregroundColor
-                    g.drawString(visibleText, x, y)
+                    g.drawString(line.text.substring(charRange.start, charRange.end), startX, y)
                 }
             }
             y += lineHeight
@@ -198,21 +207,20 @@ class TextRenderer(
         }
     }
 
-    private fun renderHighlightedText(g: Graphics, text: String, startX: Int, y: Int) {
+    private fun renderHighlightedText(
+        g: Graphics, text: String, startX: Int, y: Int, visibleStart: Int, visibleEnd: Int
+    ) {
         if (syntaxHighlighter == null || syntaxColors == null) {
             g.color = foregroundColor
-            g.drawString(text, startX, y)
+            g.drawString(text.substring(visibleStart, visibleEnd), startX, y)
             return
         }
 
         var currentX = startX
-        syntaxHighlighter?.highlight(text)?.forEach { token ->
-            g.color = when {
-                selectionModel.hasSelection -> foregroundColor
-                else -> getTokenColor(token.type)
-            }
+        syntaxHighlighter?.highlight(text.substring(visibleStart, visibleEnd))?.forEach { token ->
+            g.color = getTokenColor(token.type)
             g.drawString(token.text, currentX, y)
-            currentX += g.fontMetrics.stringWidth(token.text)
+            currentX += calculateStringWidth(token.text, token.text.length, g.fontMetrics)
         }
     }
 
