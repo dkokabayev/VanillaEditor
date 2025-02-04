@@ -30,7 +30,7 @@ class TextArea(
 ) {
     private companion object {
         object ScrollBar {
-            const val WIDTH = 15
+            const val WIDTH = 12
             val COLOR: Color = Color.lightGray
             val HOVER_COLOR: Color = Color.gray
             val DRAG_COLOR = Color(110, 110, 110)
