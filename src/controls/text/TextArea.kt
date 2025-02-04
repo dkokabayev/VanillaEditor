@@ -31,6 +31,7 @@ class TextArea(
     private companion object {
         object ScrollBar {
             const val WIDTH = 12
+            const val CORNER_RADIUS = 4
             val COLOR: Color = Color.lightGray
             val HOVER_COLOR: Color = Color.gray
             val DRAG_COLOR = Color(110, 110, 110)
@@ -53,14 +54,16 @@ class TextArea(
         color = scrollBarColor,
         hoverColor = scrollBarHoverColor,
         dragColor = scrollBarDragColor,
-        backgroundColor = scrollBarBackgroundColor
+        backgroundColor = scrollBarBackgroundColor,
+        cornerRadius = ScrollBar.CORNER_RADIUS
     )
     private val horizontalScrollBar = ScrollBarModel(
         width = scrollBarWidth,
         color = scrollBarColor,
         hoverColor = scrollBarHoverColor,
         dragColor = scrollBarDragColor,
-        backgroundColor = scrollBarBackgroundColor
+        backgroundColor = scrollBarBackgroundColor,
+        cornerRadius = ScrollBar.CORNER_RADIUS
     )
 
     var lineNumbersVisible = lineNumbersVisible

@@ -2,6 +2,9 @@ package controls.text
 
 import java.awt.Color
 import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.RenderingHints
+import java.awt.geom.RoundRectangle2D
 import kotlin.math.roundToInt
 
 internal class ScrollBarModel(
@@ -9,7 +12,8 @@ internal class ScrollBarModel(
     private val color: Color,
     private val hoverColor: Color,
     private val dragColor: Color,
-    private val backgroundColor: Color
+    private val backgroundColor: Color,
+    private val cornerRadius: Int
 ) {
     data class Metrics(val thumbSize: Int, val thumbPosition: Int, val isVisible: Boolean)
 
@@ -57,28 +61,61 @@ internal class ScrollBarModel(
     ) {
         if (!metrics.isVisible) return
 
-        g.color = backgroundColor
-        when (orientation) {
-            Orientation.Vertical -> g.fillRect(x, y, width, length)
-            Orientation.Horizontal -> g.fillRect(x, y, length, width)
-        }
+        val g2d = g as Graphics2D
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
 
-        g.color = when {
+        g2d.color = backgroundColor
+        val archWidth = (cornerRadius * 2).toFloat()
+        val backgroundShape = when (orientation) {
+            Orientation.Vertical -> RoundRectangle2D.Float(
+                x.toFloat(),
+                y.toFloat(),
+                width.toFloat(),
+                length.toFloat(),
+                archWidth,
+                archWidth
+            )
+
+            Orientation.Horizontal -> RoundRectangle2D.Float(
+                x.toFloat(),
+                y.toFloat(),
+                length.toFloat(),
+                width.toFloat(),
+                archWidth,
+                archWidth
+            )
+        }
+        g2d.fill(backgroundShape)
+
+        g2d.color = when {
             isDragging -> dragColor
             isHovered -> hoverColor
             else -> color
         }
 
         val padding = 2
-        when (orientation) {
-            Orientation.Vertical -> g.fillRect(
-                x + padding, y + metrics.thumbPosition, width - 2 * padding, metrics.thumbSize
+        val thumbArchWidth = ((cornerRadius - padding) * 2).toFloat()
+
+        val thumbShape = when (orientation) {
+            Orientation.Vertical -> RoundRectangle2D.Float(
+                (x + padding).toFloat(),
+                (y + metrics.thumbPosition).toFloat(),
+                (width - 2 * padding).toFloat(),
+                metrics.thumbSize.toFloat(),
+                thumbArchWidth,
+                thumbArchWidth
             )
 
-            Orientation.Horizontal -> g.fillRect(
-                x + metrics.thumbPosition, y + padding, metrics.thumbSize, width - 2 * padding
+            Orientation.Horizontal -> RoundRectangle2D.Float(
+                (x + metrics.thumbPosition).toFloat(),
+                (y + padding).toFloat(),
+                metrics.thumbSize.toFloat(),
+                (width - 2 * padding).toFloat(),
+                thumbArchWidth,
+                thumbArchWidth
             )
         }
+        g2d.fill(thumbShape)
     }
 
     fun getWidth(): Int = width
