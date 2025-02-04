@@ -38,8 +38,9 @@ class EditorFrame : JFrame() {
         const val LIGHT_THEME_MENU_ITEM_TITLE = "Light Theme"
         const val HELP_MENU_TITLE = "Help"
         const val ABOUT_MENU_ITEM_TITLE = "About"
-        val COMMAND_OR_CTRL_MASK = if (System.getProperty("os.name").lowercase().contains("mac"))
-            KeyEvent.META_DOWN_MASK else KeyEvent.CTRL_DOWN_MASK
+        val COMMAND_OR_CTRL_MASK = if (System.getProperty("os.name").lowercase()
+                .contains("mac")
+        ) KeyEvent.META_DOWN_MASK else KeyEvent.CTRL_DOWN_MASK
     }
 
     private val textArea: TextArea = TextArea(
@@ -47,11 +48,27 @@ class EditorFrame : JFrame() {
         fontSize = FONT_SIZE,
     )
 
+    private var currentFile: File? = null
+        set(value) {
+            field = value
+            updateTitle()
+        }
+
     private var currentTheme: Theme = Theme.Dark
         set(value) {
             field = value
             applyTheme()
         }
+
+    private fun updateTitle() {
+        title = buildString {
+            append(APP_NAME)
+            currentFile?.let {
+                append(" - ")
+                append(it.name)
+            }
+        }
+    }
 
     private fun applyTheme() {
         UIManager.setLookAndFeel(currentTheme.uiManager)
@@ -76,7 +93,6 @@ class EditorFrame : JFrame() {
     }
 
     init {
-        this.title = APP_NAME
         this.defaultCloseOperation = EXIT_ON_CLOSE
         this.setSize(EDITOR_WIDTH, EDITOR_HEIGHT)
 
@@ -91,6 +107,7 @@ class EditorFrame : JFrame() {
         contentPane.add(textArea)
         setupDropTarget()
 
+        updateTitle()
         applyTheme()
     }
 
@@ -150,6 +167,7 @@ class EditorFrame : JFrame() {
     }
 
     private fun loadFileWithSyntaxHighlighting(selectedFile: File?) {
+        currentFile = selectedFile
         textArea.text = selectedFile?.readText() ?: ""
 
         val highlighter = SyntaxHighlighterFactory.createHighlighter(selectedFile?.name ?: "")
