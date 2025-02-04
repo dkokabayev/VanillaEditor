@@ -11,7 +11,9 @@ internal class TextRenderer(
     private val selectionModel: SelectionModel,
     private val padding: Int,
     private val fontColor: Color,
-    private val selectionColor: Color
+    private val selectionColor: Color,
+    private val caretWidth: Int,
+    private val caretColor: Color,
 ) {
     data class RenderContext(
         val graphics: Graphics,
@@ -168,9 +170,7 @@ internal class TextRenderer(
         }
     }
 
-    private fun renderCaret(
-        g: Graphics, visibleContent: VisibleContent
-    ) {
+    private fun renderCaret(g: Graphics, visibleContent: VisibleContent) {
         val (firstVisibleLine, visibleLines, lineHeight, fm, _) = visibleContent
         val caretPosition = caretModel.getCurrentPosition()
         val caretLine = textBuffer.findLineAt(caretPosition.offset)
@@ -181,8 +181,9 @@ internal class TextRenderer(
             val caretX = fm.stringWidth(textBeforeCaret)
             val caretY = (lineIndex * lineHeight) + padding + fm.ascent
 
-            g.drawLine(
-                caretX + padding, caretY - fm.ascent, caretX + padding, caretY - fm.ascent + lineHeight
+            g.color = caretColor
+            g.fillRect(
+                caretX + padding - caretWidth / 2, caretY - fm.ascent, caretWidth, lineHeight
             )
         }
     }

@@ -20,11 +20,13 @@ class TextArea(
     scrollBarDragColor: Color = ScrollBar.DRAG_COLOR,
     scrollBarBackgroundColor: Color = ScrollBar.BACKGROUND_COLOR,
     private val padding: Int = TextComponent.Companion.Layout.PADDING,
+    caretWidth: Int = TextComponent.Companion.Caret.WIDTH,
+    caretColor: Color = TextComponent.Companion.Caret.COLOR,
     lineNumbersVisible: Boolean = true,
     lineNumbersColumnColor: Color = LineNumbersColumn.COLOR,
     lineNumbersColumnBackgroundColor: Color = LineNumbersColumn.BACKGROUND_COLOR
 ) : TextComponent(
-    fontName, fontSize, fontColor, selectionColor, padding
+    fontName, fontSize, fontColor, selectionColor, padding, caretWidth, caretColor
 ) {
     companion object {
         object ScrollBar {

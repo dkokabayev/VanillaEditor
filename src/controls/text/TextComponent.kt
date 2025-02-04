@@ -14,6 +14,8 @@ abstract class TextComponent(
     fontColor: Color,
     selectionColor: Color,
     private val padding: Int,
+    caretWidth: Int = Caret.WIDTH,
+    caretColor: Color = Caret.COLOR,
 ) : JComponent() {
     companion object {
         private const val MULTI_CLICK_TIMEOUT_MS = 500
@@ -31,6 +33,8 @@ abstract class TextComponent(
             const val REPEAT_INITIAL_DELAY = 250
             const val REPEAT_ACCELERATION_FACTOR = 0.8
             const val REPEAT_MIN_DELAY = 1
+            const val WIDTH = 2
+            val COLOR: Color = Color.BLACK
         }
 
         object Layout {
@@ -51,7 +55,9 @@ abstract class TextComponent(
         selectionModel = selectionModel,
         padding = padding,
         fontColor = fontColor,
-        selectionColor = selectionColor
+        selectionColor = selectionColor,
+        caretWidth = caretWidth,
+        caretColor = caretColor
     )
 
     private val backspaceAction = RepeatableAction(
