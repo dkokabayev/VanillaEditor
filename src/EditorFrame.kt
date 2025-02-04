@@ -11,12 +11,13 @@ class EditorFrame : JFrame() {
         const val EDITOR_HEIGHT = 600
         const val FRAME_TITLE = "Vanilla Editor"
         const val FILE_MENU_TITLE = "File"
-        const val OPEN_FILE_TITLE = "Open"
-        const val SAVE_FILE_TITLE = "Save"
+        const val OPEN_FILE_MENU_ITEM_TITLE = "Open"
+        const val SAVE_FILE_MENU_ITEM_TITLE = "Save"
         const val FILE_FILTER_DESCRIPTION = "java files"
         const val FILE_EXTENSION = "java"
         const val VIEW_MENU_TITLE = "View"
         const val SHOW_LINE_NUMBERS_MENU_ITEM_TITLE = "Show Line Numbers"
+        const val COLOR_SETTINGS_MENU_ITEM_TITLE = "Color Settings"
     }
 
     private val textArea: TextArea = TextArea(
@@ -41,7 +42,7 @@ class EditorFrame : JFrame() {
     private fun createFileMenu(): JMenu {
         val fileMenu = JMenu(FILE_MENU_TITLE)
 
-        val openItem = JMenuItem(OPEN_FILE_TITLE).apply {
+        val openItem = JMenuItem(OPEN_FILE_MENU_ITEM_TITLE).apply {
             addActionListener {
                 val chooser = JFileChooser()
                 chooser.fileFilter = FileNameExtensionFilter(FILE_FILTER_DESCRIPTION, FILE_EXTENSION)
@@ -51,7 +52,7 @@ class EditorFrame : JFrame() {
             }
         }
 
-        val saveItem = JMenuItem(SAVE_FILE_TITLE).apply {
+        val saveItem = JMenuItem(SAVE_FILE_MENU_ITEM_TITLE).apply {
             addActionListener {
                 val chooser = JFileChooser()
                 chooser.fileFilter = FileNameExtensionFilter(FILE_FILTER_DESCRIPTION, FILE_EXTENSION)
@@ -75,6 +76,15 @@ class EditorFrame : JFrame() {
         }
 
         viewMenu.add(showLineNumbersMenuItem)
+
+        val colorSettingsItem = JMenuItem(COLOR_SETTINGS_MENU_ITEM_TITLE).apply {
+            addActionListener {
+                ColorSettingsDialog(textArea).isVisible = true
+            }
+        }
+
+        viewMenu.addSeparator()
+        viewMenu.add(colorSettingsItem)
 
         return viewMenu
     }
