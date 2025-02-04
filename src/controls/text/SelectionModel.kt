@@ -1,6 +1,6 @@
 package controls.text
 
-internal class SelectionModel(private val textBuffer: TextBuffer) {
+class SelectionModel(private val textBuffer: TextBuffer) {
     var selectionStart: Int = -1
         private set
     var selectionEnd: Int = -1

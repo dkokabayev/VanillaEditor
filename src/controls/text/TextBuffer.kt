@@ -2,7 +2,7 @@ package controls.text
 
 import java.util.*
 
-internal class TextBuffer(val newLineChar: Char) {
+class TextBuffer(val newLineChar: Char) {
     private val buffer = StringBuilder()
     private val lineCache = TreeMap<Int, LineInfo>()
     private var lastKnownTextLength = 0

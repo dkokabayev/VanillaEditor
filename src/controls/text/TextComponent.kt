@@ -1,5 +1,7 @@
 package controls.text
 
+import controls.text.syntax.SyntaxHighlighter
+import controls.text.syntax.SyntaxThemeColors
 import java.awt.Color
 import java.awt.Font
 import java.awt.Graphics
@@ -46,10 +48,10 @@ abstract class TextComponent(
     private val caretBlinkTimer: Timer
     private var isMouseDragging = false
     protected var caretVisible = true
-    internal val textBuffer = TextBuffer(NEW_LINE_CHAR)
-    internal val caretModel = CaretModel(textBuffer)
-    internal val selectionModel = SelectionModel(textBuffer)
-    internal val textRenderer = TextRenderer(
+    protected val textBuffer = TextBuffer(NEW_LINE_CHAR)
+    protected val caretModel = CaretModel(textBuffer)
+    protected val selectionModel = SelectionModel(textBuffer)
+    protected val textRenderer = TextRenderer(
         textBuffer = textBuffer,
         caretModel = caretModel,
         selectionModel = selectionModel,
@@ -102,21 +104,6 @@ abstract class TextComponent(
         }
     }
 
-    init {
-        font = Font(fontName, java.awt.Font.PLAIN, fontSize)
-        this.addKeyListener(TextKeyListener())
-        this.addMouseListener(TextMouseListener())
-        this.addMouseMotionListener(TextMouseMotionListener())
-        isFocusable = true
-        focusTraversalKeysEnabled = false
-
-        caretBlinkTimer = Timer(Caret.BLINK_RATE) {
-            caretVisible = !caretVisible
-            repaint()
-        }.apply {
-            isRepeats = true
-        }
-    }
 
     var text: String
         get() = textBuffer.getText()
@@ -132,6 +119,22 @@ abstract class TextComponent(
             ensureCaretVisible()
             repaint()
         }
+
+    init {
+        font = Font(fontName, java.awt.Font.PLAIN, fontSize)
+        this.addKeyListener(TextKeyListener())
+        this.addMouseListener(TextMouseListener())
+        this.addMouseMotionListener(TextMouseMotionListener())
+        isFocusable = true
+        focusTraversalKeysEnabled = false
+
+        caretBlinkTimer = Timer(Caret.BLINK_RATE) {
+            caretVisible = !caretVisible
+            repaint()
+        }.apply {
+            isRepeats = true
+        }
+    }
 
     abstract fun onTextChanged()
     abstract fun ensureCaretVisible()
@@ -189,6 +192,14 @@ abstract class TextComponent(
         caretBlinkTimer.restart()
         caretVisible = true
         repaint()
+    }
+
+    fun setSyntaxHighlighter(highlighter: SyntaxHighlighter?) {
+        textRenderer.setSyntaxHighlighter(highlighter)
+    }
+
+    fun setSyntaxColors(syntaxColors: SyntaxThemeColors?) {
+        textRenderer.setSyntaxColors(syntaxColors)
     }
 
     private inner class TextKeyListener : KeyAdapter() {

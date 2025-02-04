@@ -70,7 +70,7 @@ class EditorFrame : JFrame() {
                 caretColor = caret
                 lineNumbersColumnColor = lineNumbersText
                 lineNumbersColumnBackgroundColor = lineNumbersBackground
-                textRenderer.setSyntaxColors(currentTheme.syntaxColors)
+                setSyntaxColors(currentTheme.syntaxColors)
             }
         }
     }
@@ -153,13 +153,13 @@ class EditorFrame : JFrame() {
         textArea.text = selectedFile?.readText() ?: ""
 
         val highlighter = SyntaxHighlighterFactory.createHighlighter(selectedFile?.name ?: "")
-        textArea.textRenderer.setSyntaxHighlighter(highlighter)
+        textArea.setSyntaxHighlighter(highlighter)
 
         if (highlighter != null) {
             val theme = if (textArea.background.red < 128) Theme.Dark else Theme.Light
-            textArea.textRenderer.setSyntaxColors(theme.syntaxColors)
+            textArea.setSyntaxColors(theme.syntaxColors)
         } else {
-            textArea.textRenderer.setSyntaxColors(null)
+            textArea.setSyntaxColors(null)
         }
 
         textArea.repaint()

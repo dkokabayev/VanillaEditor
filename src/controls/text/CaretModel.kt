@@ -1,6 +1,6 @@
 package controls.text
 
-internal class CaretModel(private val textBuffer: TextBuffer) {
+class CaretModel(private val textBuffer: TextBuffer) {
     var position: Int = 0
         private set
 

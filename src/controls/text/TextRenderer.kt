@@ -8,7 +8,7 @@ import java.awt.FontMetrics
 import java.awt.Graphics
 import java.awt.Rectangle
 
-internal class TextRenderer(
+class TextRenderer(
     private val textBuffer: TextBuffer,
     private val caretModel: CaretModel,
     private val selectionModel: SelectionModel,
@@ -39,7 +39,7 @@ internal class TextRenderer(
         val visibleCharRanges: List<CharRange>
     )
 
-    internal data class CharRange(
+    data class CharRange(
         val start: Int, val end: Int
     )
 
