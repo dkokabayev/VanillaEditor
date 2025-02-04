@@ -9,8 +9,8 @@ internal class LineNumbersRenderer(
     var isVisible: Boolean,
     private val padding: Int,
     private val font: Font,
-    private val color: Color,
-    private val backgroundColor: Color
+    internal var color: Color,
+    internal var backgroundColor: Color
 ) {
     fun getWidth(lineCount: Int, fm: FontMetrics): Int {
         if (!isVisible) return 0

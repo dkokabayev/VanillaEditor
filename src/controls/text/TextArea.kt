@@ -44,6 +44,73 @@ class TextArea(
         }
     }
 
+    var foregroundColor: Color = foregroundColor
+        set(value) {
+            field = value
+            textRenderer.foregroundColor = value
+            repaint()
+        }
+
+    var selectionColor: Color = selectionColor
+        set(value) {
+            field = value
+            textRenderer.selectionColor = value
+            repaint()
+        }
+
+    var caretColor: Color = caretColor
+        set(value) {
+            field = value
+            textRenderer.caretColor = value
+            repaint()
+        }
+
+    var scrollBarColor: Color = scrollBarColor
+        set(value) {
+            field = value
+            verticalScrollBar.color = value
+            horizontalScrollBar.color = value
+            repaint()
+        }
+
+    var scrollBarHoverColor: Color = scrollBarHoverColor
+        set(value) {
+            field = value
+            verticalScrollBar.hoverColor = value
+            horizontalScrollBar.hoverColor = value
+            repaint()
+        }
+
+    var scrollBarDragColor: Color = scrollBarDragColor
+        set(value) {
+            field = value
+            verticalScrollBar.dragColor = value
+            horizontalScrollBar.dragColor = value
+            repaint()
+        }
+
+    var scrollBarBackgroundColor: Color = scrollBarBackgroundColor
+        set(value) {
+            field = value
+            verticalScrollBar.backgroundColor = value
+            horizontalScrollBar.backgroundColor = value
+            repaint()
+        }
+
+    var lineNumbersColumnColor: Color = lineNumbersColumnColor
+        set(value) {
+            field = value
+            lineNumbersRenderer.color = value
+            repaint()
+        }
+
+    var lineNumbersColumnBackgroundColor: Color = lineNumbersColumnBackgroundColor
+        set(value) {
+            field = value
+            lineNumbersRenderer.backgroundColor = value
+            repaint()
+        }
+
     private val lineNumbersRenderer = LineNumbersRenderer(
         lineNumbersVisible, padding, font, lineNumbersColumnColor, lineNumbersColumnBackgroundColor
     )

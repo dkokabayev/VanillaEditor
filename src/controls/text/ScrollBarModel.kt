@@ -9,10 +9,10 @@ import kotlin.math.roundToInt
 
 internal class ScrollBarModel(
     private val width: Int,
-    private val color: Color,
-    private val hoverColor: Color,
-    private val dragColor: Color,
-    private val backgroundColor: Color,
+    internal var color: Color,
+    internal var hoverColor: Color,
+    internal var dragColor: Color,
+    internal var backgroundColor: Color,
     private val cornerRadius: Int
 ) {
     data class Metrics(val thumbSize: Int, val thumbPosition: Int, val isVisible: Boolean)

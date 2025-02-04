@@ -10,10 +10,10 @@ internal class TextRenderer(
     private val caretModel: CaretModel,
     private val selectionModel: SelectionModel,
     private val padding: Int,
-    private val foregroundColor: Color,
-    private val selectionColor: Color,
+    internal var foregroundColor: Color,
+    internal var selectionColor: Color,
     private val caretWidth: Int,
-    private val caretColor: Color,
+    internal var caretColor: Color,
 ) {
     data class RenderContext(
         val graphics: Graphics,
