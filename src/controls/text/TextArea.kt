@@ -6,6 +6,7 @@ import java.awt.Point
 import java.awt.Rectangle
 import java.awt.event.MouseEvent
 import java.awt.event.MouseMotionAdapter
+import javax.swing.SwingUtilities
 import kotlin.math.roundToInt
 
 class TextArea(
@@ -242,6 +243,18 @@ class TextArea(
     }
 
     override fun ensureCaretVisible() {
+        if (width == 0 || height == 0) {
+            revalidate()
+            SwingUtilities.invokeLater {
+                ensureCaretVisible()
+                repaint()
+            }
+            return
+        }
+
+        scrollModel.maxScrollY = maxOf(0, getContentHeight() - (height - horizontalScrollBar.getWidth()))
+        scrollModel.maxScrollX = maxOf(0, getContentWidth() - (width - verticalScrollBar.getWidth()))
+
         val fm = getFontMetrics(font)
         val lineHeight = fm.height
         val caretPosition = caretModel.getCurrentPosition()
