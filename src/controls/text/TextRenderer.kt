@@ -10,7 +10,7 @@ internal class TextRenderer(
     private val caretModel: CaretModel,
     private val selectionModel: SelectionModel,
     private val padding: Int,
-    private val fontColor: Color,
+    private val foregroundColor: Color,
     private val selectionColor: Color,
     private val caretWidth: Int,
     private val caretColor: Color,
@@ -117,7 +117,7 @@ internal class TextRenderer(
             renderSelection(g, visibleContent, selection.start, selection.end)
         }
 
-        g.color = fontColor
+        g.color = foregroundColor
         var y = (firstVisibleLine * lineHeight) + fm.ascent + padding
 
         for ((line, charRange) in visibleLines.zip(visibleCharRanges)) {

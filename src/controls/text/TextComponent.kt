@@ -11,7 +11,7 @@ import javax.swing.Timer
 abstract class TextComponent(
     fontName: String,
     fontSize: Int,
-    fontColor: Color,
+    foregroundColor: Color,
     selectionColor: Color,
     private val padding: Int,
     caretWidth: Int = Caret.WIDTH,
@@ -54,7 +54,7 @@ abstract class TextComponent(
         caretModel = caretModel,
         selectionModel = selectionModel,
         padding = padding,
-        fontColor = fontColor,
+        foregroundColor = foregroundColor,
         selectionColor = selectionColor,
         caretWidth = caretWidth,
         caretColor = caretColor

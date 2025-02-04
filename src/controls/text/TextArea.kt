@@ -12,7 +12,7 @@ import kotlin.math.roundToInt
 class TextArea(
     fontName: String = TextComponent.Companion.Font.NAME,
     fontSize: Int = TextComponent.Companion.Font.SIZE,
-    fontColor: Color = TextComponent.Companion.Font.COLOR,
+    foregroundColor: Color = TextComponent.Companion.Font.COLOR,
     selectionColor: Color = TextComponent.Companion.Font.SELECTION_COLOR,
     scrollBarWidth: Int = ScrollBar.WIDTH,
     scrollBarColor: Color = ScrollBar.COLOR,
@@ -26,7 +26,7 @@ class TextArea(
     lineNumbersColumnColor: Color = LineNumbersColumn.COLOR,
     lineNumbersColumnBackgroundColor: Color = LineNumbersColumn.BACKGROUND_COLOR
 ) : TextComponent(
-    fontName, fontSize, fontColor, selectionColor, padding, caretWidth, caretColor
+    fontName, fontSize, foregroundColor, selectionColor, padding, caretWidth, caretColor
 ) {
     private companion object {
         object ScrollBar {
