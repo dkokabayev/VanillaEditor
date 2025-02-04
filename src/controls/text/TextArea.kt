@@ -246,7 +246,7 @@ class TextArea(
         val lineHeight = fm.height
         val caretPosition = caretModel.getCurrentPosition()
         val caretLine = textBuffer.findLineAt(caretPosition.offset)
-        val caretY = lineHeight * textBuffer.getAllLines().indexOfFirst { it.start == caretLine.start }
+        val caretY = lineHeight * textBuffer.getAllLines().indexOfFirst { it.start == caretLine.start } + padding
         val textBeforeCaret = caretLine.text.substring(0, caretPosition.offset - caretLine.start)
         val caretX = fm.stringWidth(textBeforeCaret)
 
@@ -391,14 +391,14 @@ class TextArea(
 
     private fun getContentHeight(): Int {
         val fm = getFontMetrics(font)
-        return fm.height * textBuffer.getAllLines().size
+        return fm.height * textBuffer.getAllLines().size + padding * 2
     }
 
     private fun getContentWidth(): Int {
         val fm = getFontMetrics(font)
         val lineCount = textBuffer.getAllLines().size
         val lineNumbersWidth = if (lineNumbersRenderer.isVisible) {
-            lineNumbersRenderer.getWidth(lineCount, fm)
+            lineNumbersRenderer.getWidth(lineCount, fm) + padding * 2
         } else {
             0
         }
