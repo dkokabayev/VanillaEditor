@@ -1,4 +1,5 @@
 import controls.text.TextArea
+import java.awt.Color
 import javax.swing.*
 import javax.swing.filechooser.FileNameExtensionFilter
 
@@ -18,12 +19,42 @@ class EditorFrame : JFrame() {
         const val VIEW_MENU_TITLE = "View"
         const val SHOW_LINE_NUMBERS_MENU_ITEM_TITLE = "Show Line Numbers"
         const val COLOR_SETTINGS_MENU_ITEM_TITLE = "Color Settings"
+        const val THEMES_MENU_TITLE = "Themes"
+        const val DARK_THEME_MENU_ITEM_TITLE = "Dark Theme"
+        const val LIGHT_THEME_MENU_ITEM_TITLE = "Light Theme"
     }
 
     private val textArea: TextArea = TextArea(
         fontName = FONT_NAME,
         fontSize = FONT_SIZE,
     )
+
+    private var currentTheme: Theme = Theme.Dark
+        set(value) {
+            field = value
+            applyTheme()
+        }
+
+    private fun applyTheme() {
+        UIManager.setLookAndFeel(currentTheme.uiManager)
+        SwingUtilities.updateComponentTreeUI(this)
+
+        with(currentTheme.colors) {
+            textArea.apply {
+                background = this@with.background
+                foreground = this@with.foreground
+                foregroundColor = foreground
+                selectionColor = selection
+                scrollBarColor = scrollBar
+                scrollBarHoverColor = scrollBarHover
+                scrollBarDragColor = scrollBarDrag
+                scrollBarBackgroundColor = scrollBarBackground
+                caretColor = caret
+                lineNumbersColumnColor = lineNumbersText
+                lineNumbersColumnBackgroundColor = lineNumbersBackground
+            }
+        }
+    }
 
     init {
         this.title = FRAME_TITLE
@@ -37,10 +68,13 @@ class EditorFrame : JFrame() {
         jMenuBar = menuBar
 
         contentPane.add(textArea)
+
+        applyTheme()
     }
 
     private fun createFileMenu(): JMenu {
         val fileMenu = JMenu(FILE_MENU_TITLE)
+        fileMenu.background = Color.BLACK
 
         val openItem = JMenuItem(OPEN_FILE_MENU_ITEM_TITLE).apply {
             addActionListener {
@@ -85,6 +119,23 @@ class EditorFrame : JFrame() {
 
         viewMenu.addSeparator()
         viewMenu.add(colorSettingsItem)
+
+        val themesMenu = JMenu(THEMES_MENU_TITLE)
+
+        val darkThemeItem = JRadioButtonMenuItem(DARK_THEME_MENU_ITEM_TITLE, true)
+        val lightThemeItem = JRadioButtonMenuItem(LIGHT_THEME_MENU_ITEM_TITLE, false)
+
+        val themeGroup = ButtonGroup()
+        themeGroup.add(darkThemeItem)
+        themeGroup.add(lightThemeItem)
+
+        darkThemeItem.addActionListener { currentTheme = Theme.Dark }
+        lightThemeItem.addActionListener { currentTheme = Theme.Light }
+
+        themesMenu.add(darkThemeItem)
+        themesMenu.add(lightThemeItem)
+
+        viewMenu.add(themesMenu)
 
         return viewMenu
     }
