@@ -16,6 +16,7 @@ class EditorFrame : JFrame() {
         const val OPEN_FILE_MENU_ITEM_TITLE = "Open"
         const val SAVE_FILE_MENU_ITEM_TITLE = "Save"
         const val CLOSE_FILE_MENU_ITEM_TITLE = "Close"
+        const val EXIT_MENU_ITEM_TITLE = "Exit"
         const val FILE_FILTER_DESCRIPTION = "Java, Kotlin, and Text Files"
         val FILE_EXTENSIONS = arrayOf("java", "kt", "txt")
         const val VIEW_MENU_TITLE = "View"
@@ -114,10 +115,20 @@ class EditorFrame : JFrame() {
             }
         }
 
+        val exitItem = JMenuItem(EXIT_MENU_ITEM_TITLE).apply {
+            accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_Q, COMMAND_OR_CTRL_MASK)
+            mnemonic = KeyEvent.VK_X
+            addActionListener {
+                dispose()
+            }
+        }
+
         fileMenu.add(openItem)
         fileMenu.add(saveItem)
         fileMenu.addSeparator()
         fileMenu.add(closeItem)
+        fileMenu.addSeparator()
+        fileMenu.add(exitItem)
         return fileMenu
     }
 
