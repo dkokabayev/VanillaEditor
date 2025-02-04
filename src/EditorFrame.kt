@@ -12,7 +12,7 @@ import javax.swing.filechooser.FileNameExtensionFilter
 
 class EditorFrame : JFrame() {
 
-    private companion object EditorSettings {
+    companion object EditorSettings {
         const val APP_NAME = "Vanilla Editor"
         const val APP_DESCRIPTION = "A simple editor for Java, Kotlin and text files"
         const val APP_VERSION = "0.1"
@@ -77,6 +77,8 @@ class EditorFrame : JFrame() {
         this.title = APP_NAME
         this.defaultCloseOperation = EXIT_ON_CLOSE
         this.setSize(EDITOR_WIDTH, EDITOR_HEIGHT)
+
+        WindowManager.setMainFrame(this)
 
         val menuBar = JMenuBar()
         menuBar.add(createFileMenu())
@@ -207,21 +209,12 @@ class EditorFrame : JFrame() {
         val aboutItem = JMenuItem(ABOUT_MENU_ITEM_TITLE).apply {
             mnemonic = KeyEvent.VK_A
             addActionListener {
-                showAboutDialog()
+                AboutDialog(this@EditorFrame).isVisible = true
             }
         }
 
         helpMenu.add(aboutItem)
         return helpMenu
-    }
-
-    private fun showAboutDialog() {
-        JOptionPane.showMessageDialog(
-            this,
-            "$APP_NAME\n$APP_DESCRIPTION\nVersion $APP_VERSION\n© $APP_YEAR $APP_AUTHOR",
-            "About $APP_NAME",
-            JOptionPane.INFORMATION_MESSAGE
-        )
     }
 
     private fun setupDropTarget() {
