@@ -9,6 +9,22 @@ import java.awt.event.MouseMotionAdapter
 import javax.swing.SwingUtilities
 import kotlin.math.roundToInt
 
+/**
+ * A text area component that provides scrollable text editing functionality with line numbers.
+ * Supports both vertical and horizontal scrolling, line numbers display, and customizable visual styling.
+ *
+ * @property padding The internal padding of the text area in pixels
+ * @property lineNumbersVisible Controls whether line numbers are displayed
+ * @property foregroundColor The color of the text
+ * @property selectionColor The background color of selected text
+ * @property caretColor The color of the text cursor
+ * @property scrollBarColor The default color of scroll bars
+ * @property scrollBarHoverColor The color of scroll bars when hovered
+ * @property scrollBarDragColor The color of scroll bars when being dragged
+ * @property scrollBarBackgroundColor The background color of the scroll bar track
+ * @property lineNumbersColumnColor The color of line numbers text
+ * @property lineNumbersColumnBackgroundColor The background color of the line numbers column
+ */
 class TextArea(
     fontName: String = TextComponent.Companion.Font.NAME,
     fontSize: Int = TextComponent.Companion.Font.SIZE,

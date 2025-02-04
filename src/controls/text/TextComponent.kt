@@ -10,6 +10,13 @@ import java.awt.event.*
 import javax.swing.JComponent
 import javax.swing.Timer
 
+/**
+ * Abstract base class for text editing components.
+ * Provides core text editing functionality including caret management, text selection,
+ * keyboard navigation, and basic text manipulation operations.
+ *
+ * @property text The current text content of the component
+ */
 abstract class TextComponent(
     fontName: String,
     fontSize: Int,

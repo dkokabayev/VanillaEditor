@@ -1,6 +1,12 @@
 package controls.text.syntax
 
-
+/**
+ * Represents a token in the syntax highlighting system.
+ * Each token has a type and associated text content.
+ *
+ * @property type The type of the token
+ * @property text The actual text content of the token
+ */
 sealed class Token(val type: TokenType, val text: kotlin.String) {
     class Keyword(text: kotlin.String) : Token(TokenType.KEYWORD, text)
     class String(text: kotlin.String) : Token(TokenType.STRING, text)
