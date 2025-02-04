@@ -13,11 +13,15 @@ import javax.swing.filechooser.FileNameExtensionFilter
 class EditorFrame : JFrame() {
 
     private companion object EditorSettings {
+        const val APP_NAME = "Vanilla Editor"
+        const val APP_DESCRIPTION = "A simple editor for Java, Kotlin and text files"
+        const val APP_VERSION = "0.1"
+        const val APP_YEAR = "2025"
+        const val APP_AUTHOR = "https://github.com/dkokabayev"
         const val FONT_NAME = "Monospaced"
         const val FONT_SIZE = 13
         const val EDITOR_WIDTH = 800
         const val EDITOR_HEIGHT = 600
-        const val FRAME_TITLE = "Vanilla Editor"
         const val FILE_MENU_TITLE = "File"
         const val OPEN_FILE_MENU_ITEM_TITLE = "Open"
         const val SAVE_FILE_MENU_ITEM_TITLE = "Save"
@@ -31,6 +35,8 @@ class EditorFrame : JFrame() {
         const val THEMES_MENU_TITLE = "Themes"
         const val DARK_THEME_MENU_ITEM_TITLE = "Dark Theme"
         const val LIGHT_THEME_MENU_ITEM_TITLE = "Light Theme"
+        const val HELP_MENU_TITLE = "Help"
+        const val ABOUT_MENU_ITEM_TITLE = "About"
         val COMMAND_OR_CTRL_MASK = if (System.getProperty("os.name").lowercase().contains("mac"))
             KeyEvent.META_DOWN_MASK else KeyEvent.CTRL_DOWN_MASK
     }
@@ -68,13 +74,14 @@ class EditorFrame : JFrame() {
     }
 
     init {
-        this.title = FRAME_TITLE
+        this.title = APP_NAME
         this.defaultCloseOperation = EXIT_ON_CLOSE
         this.setSize(EDITOR_WIDTH, EDITOR_HEIGHT)
 
         val menuBar = JMenuBar()
         menuBar.add(createFileMenu())
         menuBar.add(createViewMenu())
+        menuBar.add(createHelpMenu())
         jMenuBar = menuBar
 
         contentPane.add(textArea)
@@ -190,6 +197,31 @@ class EditorFrame : JFrame() {
         viewMenu.add(themesMenu)
 
         return viewMenu
+    }
+
+    private fun createHelpMenu(): JMenu {
+        val helpMenu = JMenu(HELP_MENU_TITLE).apply {
+            mnemonic = KeyEvent.VK_H
+        }
+
+        val aboutItem = JMenuItem(ABOUT_MENU_ITEM_TITLE).apply {
+            mnemonic = KeyEvent.VK_A
+            addActionListener {
+                showAboutDialog()
+            }
+        }
+
+        helpMenu.add(aboutItem)
+        return helpMenu
+    }
+
+    private fun showAboutDialog() {
+        JOptionPane.showMessageDialog(
+            this,
+            "$APP_NAME\n$APP_DESCRIPTION\nVersion $APP_VERSION\n© $APP_YEAR $APP_AUTHOR",
+            "About $APP_NAME",
+            JOptionPane.INFORMATION_MESSAGE
+        )
     }
 
     private fun setupDropTarget() {
