@@ -1,10 +1,14 @@
 import com.formdev.flatlaf.themes.FlatMacDarkLaf
 import com.formdev.flatlaf.themes.FlatMacLightLaf
+import controls.text.syntax.DarkThemeColors
+import controls.text.syntax.LightThemeColors
+import controls.text.syntax.SyntaxThemeColors
 import java.awt.Color
 
 sealed class Theme(
     val uiManager: javax.swing.LookAndFeel,
-    val colors: ThemeColors
+    val colors: ThemeColors,
+    val syntaxColors: SyntaxThemeColors
 ) {
     data object Dark : Theme(
         uiManager = FlatMacDarkLaf(),
@@ -19,7 +23,8 @@ sealed class Theme(
             caret = Color(235, 235, 235),
             lineNumbersText = Color(153, 153, 153),
             lineNumbersBackground = Color(36, 36, 36)
-        )
+        ),
+        syntaxColors = DarkThemeColors()
     )
 
     data object Light : Theme(
@@ -35,6 +40,7 @@ sealed class Theme(
             caret = Color(0, 0, 0),
             lineNumbersText = Color(122, 122, 122),
             lineNumbersBackground = Color(255, 255, 255)
-        )
+        ),
+        syntaxColors = LightThemeColors()
     )
 }

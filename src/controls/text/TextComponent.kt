@@ -126,7 +126,7 @@ abstract class TextComponent(
             value.forEach { char ->
                 textBuffer.insertChar(char, textBuffer.length)
             }
-            caretModel.moveToTextEnd()
+            caretModel.moveToTextStart()
             selectionModel.clearSelection()
             onTextChanged()
             ensureCaretVisible()

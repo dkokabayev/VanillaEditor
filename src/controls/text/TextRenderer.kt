@@ -1,5 +1,8 @@
 package controls.text
 
+import controls.text.syntax.SyntaxHighlighter
+import controls.text.syntax.SyntaxThemeColors
+import controls.text.syntax.TokenType
 import java.awt.Color
 import java.awt.FontMetrics
 import java.awt.Graphics
@@ -14,6 +17,8 @@ internal class TextRenderer(
     internal var selectionColor: Color,
     private val caretWidth: Int,
     internal var caretColor: Color,
+    private var syntaxHighlighter: SyntaxHighlighter? = null,
+    private var syntaxColors: SyntaxThemeColors? = null
 ) {
     data class RenderContext(
         val graphics: Graphics,
@@ -117,7 +122,6 @@ internal class TextRenderer(
             renderSelection(g, visibleContent, selection.start, selection.end)
         }
 
-        g.color = foregroundColor
         var y = (firstVisibleLine * lineHeight) + fm.ascent + padding
 
         for ((line, charRange) in visibleLines.zip(visibleCharRanges)) {
@@ -128,7 +132,13 @@ internal class TextRenderer(
                 }
 
                 val visibleText = line.text.substring(charRange.start, charRange.end)
-                g.drawString(visibleText, x, y)
+
+                if (syntaxHighlighter != null) {
+                    renderHighlightedText(g, visibleText, x, y)
+                } else {
+                    g.color = foregroundColor
+                    g.drawString(visibleText, x, y)
+                }
             }
             y += lineHeight
         }
@@ -186,5 +196,45 @@ internal class TextRenderer(
                 caretX + padding - caretWidth / 2, caretY - fm.ascent, caretWidth, lineHeight
             )
         }
+    }
+
+    private fun renderHighlightedText(g: Graphics, text: String, startX: Int, y: Int) {
+        if (syntaxHighlighter == null || syntaxColors == null) {
+            g.color = foregroundColor
+            g.drawString(text, startX, y)
+            return
+        }
+
+        var currentX = startX
+        syntaxHighlighter?.highlight(text)?.forEach { token ->
+            g.color = when {
+                selectionModel.hasSelection -> foregroundColor
+                else -> getTokenColor(token.type)
+            }
+            g.drawString(token.text, currentX, y)
+            currentX += g.fontMetrics.stringWidth(token.text)
+        }
+    }
+
+    private fun getTokenColor(type: TokenType): Color {
+        return when (type) {
+            TokenType.KEYWORD -> syntaxColors?.keyword
+            TokenType.STRING -> syntaxColors?.string
+            TokenType.NUMBER -> syntaxColors?.number
+            TokenType.COMMENT -> syntaxColors?.comment
+            TokenType.ANNOTATION -> syntaxColors?.annotation
+            TokenType.TYPE -> syntaxColors?.type
+            TokenType.METHOD -> syntaxColors?.method
+            TokenType.OPERATOR -> syntaxColors?.operator
+            TokenType.PLAIN -> syntaxColors?.plain
+        } ?: foregroundColor
+    }
+
+    fun setSyntaxHighlighter(highlighter: SyntaxHighlighter?) {
+        syntaxHighlighter = highlighter
+    }
+
+    fun setSyntaxColors(colors: SyntaxThemeColors?) {
+        syntaxColors = colors
     }
 }

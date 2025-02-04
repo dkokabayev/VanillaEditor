@@ -1,4 +1,5 @@
 import controls.text.TextArea
+import syntax.SyntaxHighlighterFactory
 import java.awt.Color
 import java.awt.datatransfer.DataFlavor
 import java.awt.dnd.DnDConstants
@@ -69,6 +70,7 @@ class EditorFrame : JFrame() {
                 caretColor = caret
                 lineNumbersColumnColor = lineNumbersText
                 lineNumbersColumnBackgroundColor = lineNumbersBackground
+                textRenderer.setSyntaxColors(currentTheme.syntaxColors)
             }
         }
     }
@@ -105,7 +107,7 @@ class EditorFrame : JFrame() {
                 val chooser = JFileChooser()
                 chooser.fileFilter = FileNameExtensionFilter(FILE_FILTER_DESCRIPTION, *FILE_EXTENSIONS)
                 if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-                    textArea.text = chooser.selectedFile.readText()
+                    loadFileWithSyntaxHighlighting(chooser.selectedFile)
                 }
             }
         }
@@ -126,7 +128,7 @@ class EditorFrame : JFrame() {
             accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_W, COMMAND_OR_CTRL_MASK)
             mnemonic = KeyEvent.VK_C
             addActionListener {
-                textArea.text = ""
+                loadFileWithSyntaxHighlighting(null)
             }
         }
 
@@ -145,6 +147,22 @@ class EditorFrame : JFrame() {
         fileMenu.addSeparator()
         fileMenu.add(exitItem)
         return fileMenu
+    }
+
+    private fun loadFileWithSyntaxHighlighting(selectedFile: File?) {
+        textArea.text = selectedFile?.readText() ?: ""
+
+        val highlighter = SyntaxHighlighterFactory.createHighlighter(selectedFile?.name ?: "")
+        textArea.textRenderer.setSyntaxHighlighter(highlighter)
+
+        if (highlighter != null) {
+            val theme = if (textArea.background.red < 128) Theme.Dark else Theme.Light
+            textArea.textRenderer.setSyntaxColors(theme.syntaxColors)
+        } else {
+            textArea.textRenderer.setSyntaxColors(null)
+        }
+
+        textArea.repaint()
     }
 
     private fun createViewMenu(): JMenu {
@@ -227,7 +245,7 @@ class EditorFrame : JFrame() {
 
                     droppedFiles.firstOrNull()?.let { file ->
                         if (file is File && isValidFileExtension(file)) {
-                            textArea.text = file.readText()
+                            loadFileWithSyntaxHighlighting(file)
                             event.dropComplete(true)
                         } else {
                             event.dropComplete(false)
