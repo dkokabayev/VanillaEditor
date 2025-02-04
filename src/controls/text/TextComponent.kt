@@ -17,7 +17,7 @@ abstract class TextComponent(
     caretWidth: Int = Caret.WIDTH,
     caretColor: Color = Caret.COLOR,
 ) : JComponent() {
-    companion object {
+    protected companion object {
         private const val MULTI_CLICK_TIMEOUT_MS = 500
         private const val NEW_LINE_CHAR = '\n'
 

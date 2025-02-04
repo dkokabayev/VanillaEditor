@@ -28,7 +28,7 @@ class TextArea(
 ) : TextComponent(
     fontName, fontSize, fontColor, selectionColor, padding, caretWidth, caretColor
 ) {
-    companion object {
+    private companion object {
         object ScrollBar {
             const val WIDTH = 15
             val COLOR: Color = Color.lightGray
