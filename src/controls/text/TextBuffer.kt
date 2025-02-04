@@ -7,6 +7,12 @@ internal class TextBuffer(val newLineChar: Char) {
     private val lineCache = TreeMap<Int, LineInfo>()
     private var lastKnownTextLength = 0
 
+    private val emptyLineInfo = LineInfo(0, 0, "")
+
+    init {
+        lineCache[0] = emptyLineInfo
+    }
+
     val length: Int
         get() = buffer.length
 
@@ -38,7 +44,7 @@ internal class TextBuffer(val newLineChar: Char) {
 
         lineCache.clear()
         if (buffer.isEmpty()) {
-            lineCache[0] = LineInfo(0, 0, "")
+            lineCache[0] = emptyLineInfo
         } else {
             scanLines(0) { start, end, text ->
                 lineCache[start] = LineInfo(start, end, text)
@@ -48,7 +54,7 @@ internal class TextBuffer(val newLineChar: Char) {
     }
 
     private fun updateLineCacheIncrementally(changePosition: Int) {
-        if (lineCache.isEmpty() || changePosition == 0) {
+        if (lineCache.isEmpty()) {
             updateLineCache()
             return
         }
@@ -70,7 +76,7 @@ internal class TextBuffer(val newLineChar: Char) {
     fun findLineAt(position: Int): LineInfo {
         updateLineCache()
         val pos = position.coerceIn(0, length)
-        return lineCache.floorEntry(pos)?.value ?: lineCache.firstEntry()?.value ?: LineInfo(0, 0, "")
+        return lineCache.floorEntry(pos)?.value ?: lineCache.firstEntry()?.value ?: emptyLineInfo
     }
 
     fun findPreviousLine(currentLine: LineInfo): LineInfo? {
@@ -121,7 +127,7 @@ internal class TextBuffer(val newLineChar: Char) {
         buffer.setLength(0)
         lineCache.clear()
         lastKnownTextLength = 0
-        lineCache[0] = LineInfo(0, 0, "")
+        lineCache[0] = emptyLineInfo
     }
 
     fun getLines(): List<String> = getAllLines().map { it.text }
