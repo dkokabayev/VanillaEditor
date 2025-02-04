@@ -1,5 +1,4 @@
 import java.awt.Desktop
-import javax.swing.JFrame
 import javax.swing.SwingUtilities
 
 fun main() {
@@ -17,7 +16,6 @@ fun main() {
         }
     }
 
-    JFrame.setDefaultLookAndFeelDecorated(true)
     SwingUtilities.invokeLater {
         EditorFrame().apply {
             isVisible = true
