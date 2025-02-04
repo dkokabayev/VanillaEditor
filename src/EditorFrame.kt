@@ -15,6 +15,8 @@ class EditorFrame : JFrame() {
         const val SAVE_FILE_TITLE = "Save"
         const val FILE_FILTER_DESCRIPTION = "java files"
         const val FILE_EXTENSION = "java"
+        const val VIEW_MENU_TITLE = "View"
+        const val SHOW_LINE_NUMBERS_MENU_ITEM_TITLE = "Show Line Numbers"
     }
 
     private val textArea: TextArea = TextArea(
@@ -30,6 +32,7 @@ class EditorFrame : JFrame() {
 
         val menuBar = JMenuBar()
         menuBar.add(createFileMenu())
+        menuBar.add(createViewMenu())
         jMenuBar = menuBar
 
         contentPane.add(textArea)
@@ -61,5 +64,18 @@ class EditorFrame : JFrame() {
         fileMenu.add(openItem)
         fileMenu.add(saveItem)
         return fileMenu
+    }
+
+    private fun createViewMenu(): JMenu {
+        val viewMenu = JMenu(VIEW_MENU_TITLE)
+
+        val showLineNumbersMenuItem = JCheckBoxMenuItem(SHOW_LINE_NUMBERS_MENU_ITEM_TITLE).apply {
+            isSelected = textArea.lineNumbersVisible
+            addActionListener { textArea.lineNumbersVisible = isSelected }
+        }
+
+        viewMenu.add(showLineNumbersMenuItem)
+
+        return viewMenu
     }
 }
