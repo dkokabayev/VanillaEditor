@@ -1,6 +1,12 @@
 import controls.text.TextArea
 import java.awt.Color
+import java.awt.datatransfer.DataFlavor
+import java.awt.dnd.DnDConstants
+import java.awt.dnd.DropTarget
+import java.awt.dnd.DropTargetAdapter
+import java.awt.dnd.DropTargetDropEvent
 import java.awt.event.KeyEvent
+import java.io.File
 import javax.swing.*
 import javax.swing.filechooser.FileNameExtensionFilter
 
@@ -63,7 +69,6 @@ class EditorFrame : JFrame() {
 
     init {
         this.title = FRAME_TITLE
-
         this.defaultCloseOperation = EXIT_ON_CLOSE
         this.setSize(EDITOR_WIDTH, EDITOR_HEIGHT)
 
@@ -73,6 +78,7 @@ class EditorFrame : JFrame() {
         jMenuBar = menuBar
 
         contentPane.add(textArea)
+        setupDropTarget()
 
         applyTheme()
     }
@@ -184,5 +190,36 @@ class EditorFrame : JFrame() {
         viewMenu.add(themesMenu)
 
         return viewMenu
+    }
+
+    private fun setupDropTarget() {
+        val dropTarget = DropTarget(textArea, object : DropTargetAdapter() {
+            override fun drop(event: DropTargetDropEvent) {
+                try {
+                    event.acceptDrop(DnDConstants.ACTION_COPY)
+
+                    val droppedFiles = event.transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
+
+                    droppedFiles.firstOrNull()?.let { file ->
+                        if (file is File && isValidFileExtension(file)) {
+                            textArea.text = file.readText()
+                            event.dropComplete(true)
+                        } else {
+                            event.dropComplete(false)
+                        }
+                    } ?: event.dropComplete(false)
+
+                } catch (e: Exception) {
+                    event.dropComplete(false)
+                }
+            }
+        })
+        dropTarget.isActive = true
+    }
+
+    private fun isValidFileExtension(file: File): Boolean {
+        return FILE_EXTENSIONS.any { ext ->
+            file.name.endsWith(".$ext", ignoreCase = true)
+        }
     }
 }
