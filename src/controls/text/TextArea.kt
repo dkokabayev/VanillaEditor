@@ -9,35 +9,41 @@ import java.awt.event.MouseMotionAdapter
 import kotlin.math.roundToInt
 
 class TextArea(
-    fontName: String = "Monospaced",
-    fontSize: Int = 14,
-    caretBlinkRate: Int = 500,
-    repeatInitialDelay: Int = 250,
-    repeatAccelerationFactor: Double = 0.8,
-    repeatMinDelay: Int = 1,
-    fontColor: Color = Color.BLACK,
-    selectionColor: Color = Color.PINK,
-    newLineChar: Char = '\n',
-    padding: Int = 5,
+    fontName: String = TextComponent.Companion.Font.NAME,
+    fontSize: Int = TextComponent.Companion.Font.SIZE,
+    fontColor: Color = TextComponent.Companion.Font.COLOR,
+    selectionColor: Color = TextComponent.Companion.Font.SELECTION_COLOR,
+    scrollBarWidth: Int = ScrollBar.WIDTH,
+    scrollBarColor: Color = ScrollBar.COLOR,
+    scrollBarHoverColor: Color = ScrollBar.HOVER_COLOR,
+    scrollBarDragColor: Color = ScrollBar.DRAG_COLOR,
+    scrollBarBackgroundColor: Color = ScrollBar.BACKGROUND_COLOR,
+    private val padding: Int = TextComponent.Companion.Layout.PADDING,
     lineNumbersVisible: Boolean = true,
-    scrollBarWidth: Int = 15,
-    scrollBarColor: Color = Color.lightGray,
-    scrollBarHoverColor: Color = Color.gray,
-    scrollBarDragColor: Color = Color(110, 110, 110),
-    scrollBarBackgroundColor: Color = Color(230, 230, 230)
+    lineNumbersColumnColor: Color = LineNumbersColumn.COLOR,
+    lineNumbersColumnBackgroundColor: Color = LineNumbersColumn.BACKGROUND_COLOR
 ) : TextComponent(
-    fontName,
-    fontSize,
-    caretBlinkRate,
-    repeatInitialDelay,
-    repeatAccelerationFactor,
-    repeatMinDelay,
-    newLineChar,
-    fontColor,
-    selectionColor,
-    padding
+    fontName, fontSize, fontColor, selectionColor, padding
 ) {
-    private val lineNumbersRenderer = LineNumbersRenderer(lineNumbersVisible, font, Color.GRAY)
+    companion object {
+        object ScrollBar {
+            const val WIDTH = 15
+            val COLOR: Color = Color.lightGray
+            val HOVER_COLOR: Color = Color.gray
+            val DRAG_COLOR = Color(110, 110, 110)
+            val BACKGROUND_COLOR = Color(230, 230, 230)
+        }
+
+        object LineNumbersColumn {
+            val COLOR: Color = Color.GRAY
+            val BACKGROUND_COLOR = Color(230, 230, 230)
+        }
+    }
+
+    private val lineNumbersRenderer = LineNumbersRenderer(
+        lineNumbersVisible, padding, font, lineNumbersColumnColor, lineNumbersColumnBackgroundColor
+    )
+
     private val scrollModel = ScrollModel()
     private val verticalScrollBar = ScrollBarModel(
         width = scrollBarWidth,

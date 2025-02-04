@@ -9,9 +9,6 @@ object EditorSettings {
     val SELECTION_COLOR: Color = Color.PINK
     const val FONT_NAME = "Monospaced"
     const val FONT_SIZE = 14
-    const val PADDING = 5
-    const val CARET_BLINK_RATE = 500
-    const val REPEAT_INITIAL_DELAY = 250
     const val EDITOR_WIDTH = 800
     const val EDITOR_HEIGHT = 600
     const val FRAME_TITLE = "Vanilla Editor"
@@ -20,7 +17,6 @@ object EditorSettings {
     const val SAVE_FILE_TITLE = "Save"
     const val FILE_FILTER_DESCRIPTION = "java files"
     const val FILE_EXTENSION = "java"
-    const val NEW_LINE_CHAR = '\n'
 }
 
 fun main() {
@@ -32,12 +28,8 @@ fun main() {
         val textComponent = TextArea(
             fontName = EditorSettings.FONT_NAME,
             fontSize = EditorSettings.FONT_SIZE,
-            caretBlinkRate = EditorSettings.CARET_BLINK_RATE,
-            repeatInitialDelay = EditorSettings.REPEAT_INITIAL_DELAY,
-            newLineChar = EditorSettings.NEW_LINE_CHAR,
             fontColor = EditorSettings.FONT_COLOR,
             selectionColor = EditorSettings.SELECTION_COLOR,
-            padding = EditorSettings.PADDING,
         )
 
         // TODO: Remove these lines

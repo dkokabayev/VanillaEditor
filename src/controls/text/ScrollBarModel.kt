@@ -5,11 +5,11 @@ import java.awt.Graphics
 import kotlin.math.roundToInt
 
 internal class ScrollBarModel(
-    private val width: Int = 15,
-    private val color: Color = Color.lightGray,
-    private val hoverColor: Color = Color.gray,
-    private val dragColor: Color = Color(110, 110, 110),
-    private val backgroundColor: Color = Color(230, 230, 230)
+    private val width: Int,
+    private val color: Color,
+    private val hoverColor: Color,
+    private val dragColor: Color,
+    private val backgroundColor: Color
 ) {
     data class Metrics(val thumbSize: Int, val thumbPosition: Int, val isVisible: Boolean)
 

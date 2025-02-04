@@ -8,25 +8,41 @@ import java.awt.event.*
 import javax.swing.JComponent
 import javax.swing.Timer
 
-private const val MULTI_CLICK_TIMEOUT_MS = 500
-
 abstract class TextComponent(
     fontName: String,
     fontSize: Int,
-    caretBlinkRate: Int,
-    repeatInitialDelay: Int,
-    repeatAccelerationFactor: Double,
-    repeatMinDelay: Int,
-    private val newLineChar: Char,
     fontColor: Color,
     selectionColor: Color,
-    protected val padding: Int,
+    private val padding: Int,
 ) : JComponent() {
+    companion object {
+        private const val MULTI_CLICK_TIMEOUT_MS = 500
+        private const val NEW_LINE_CHAR = '\n'
+
+        object Font {
+            const val NAME = "Monospaced"
+            const val SIZE = 14
+            val COLOR: Color = Color.BLACK
+            val SELECTION_COLOR: Color = Color.PINK
+        }
+
+        object Caret {
+            const val BLINK_RATE = 500
+            const val REPEAT_INITIAL_DELAY = 250
+            const val REPEAT_ACCELERATION_FACTOR = 0.8
+            const val REPEAT_MIN_DELAY = 1
+        }
+
+        object Layout {
+            const val PADDING = 5
+        }
+    }
+
     private val undoManager = UndoManager()
     private val caretBlinkTimer: Timer
     private var isMouseDragging = false
     protected var caretVisible = true
-    internal val textBuffer = TextBuffer(newLineChar)
+    internal val textBuffer = TextBuffer(NEW_LINE_CHAR)
     internal val caretModel = CaretModel(textBuffer)
     internal val selectionModel = SelectionModel(textBuffer)
     internal val textRenderer = TextRenderer(
@@ -39,7 +55,9 @@ abstract class TextComponent(
     )
 
     private val backspaceAction = RepeatableAction(
-        initialDelay = repeatInitialDelay, accelerationFactor = repeatAccelerationFactor, minDelay = repeatMinDelay
+        initialDelay = Caret.REPEAT_INITIAL_DELAY,
+        accelerationFactor = Caret.REPEAT_ACCELERATION_FACTOR,
+        minDelay = Caret.REPEAT_MIN_DELAY
     ) {
         val position = caretModel.getCurrentPosition()
         textBuffer.deleteChar(position.offset, true, undoManager, caretModel)
@@ -47,7 +65,9 @@ abstract class TextComponent(
     }
 
     private val deleteAction = RepeatableAction(
-        initialDelay = repeatInitialDelay, accelerationFactor = repeatAccelerationFactor, minDelay = repeatMinDelay
+        initialDelay = Caret.REPEAT_INITIAL_DELAY,
+        accelerationFactor = Caret.REPEAT_ACCELERATION_FACTOR,
+        minDelay = Caret.REPEAT_MIN_DELAY
     ) {
         val position = caretModel.getCurrentPosition()
         textBuffer.deleteChar(position.offset, false, undoManager, caretModel)
@@ -55,7 +75,9 @@ abstract class TextComponent(
     }
 
     private val undoAction = RepeatableAction(
-        initialDelay = repeatInitialDelay, accelerationFactor = repeatAccelerationFactor, minDelay = repeatMinDelay
+        initialDelay = Caret.REPEAT_INITIAL_DELAY,
+        accelerationFactor = Caret.REPEAT_ACCELERATION_FACTOR,
+        minDelay = Caret.REPEAT_MIN_DELAY
     ) {
         if (undoManager.undo(textBuffer, caretModel)) {
             selectionModel.clearSelection()
@@ -64,7 +86,9 @@ abstract class TextComponent(
     }
 
     private val redoAction = RepeatableAction(
-        initialDelay = repeatInitialDelay, accelerationFactor = repeatAccelerationFactor, minDelay = repeatMinDelay
+        initialDelay = Caret.REPEAT_INITIAL_DELAY,
+        accelerationFactor = Caret.REPEAT_ACCELERATION_FACTOR,
+        minDelay = Caret.REPEAT_MIN_DELAY
     ) {
         if (undoManager.redo(textBuffer, caretModel)) {
             selectionModel.clearSelection()
@@ -73,14 +97,14 @@ abstract class TextComponent(
     }
 
     init {
-        font = Font(fontName, Font.PLAIN, fontSize)
+        font = Font(fontName, java.awt.Font.PLAIN, fontSize)
         this.addKeyListener(TextKeyListener())
         this.addMouseListener(TextMouseListener())
         this.addMouseMotionListener(TextMouseMotionListener())
         isFocusable = true
         focusTraversalKeysEnabled = false
 
-        caretBlinkTimer = Timer(caretBlinkRate) {
+        caretBlinkTimer = Timer(Caret.BLINK_RATE) {
             caretVisible = !caretVisible
             repaint()
         }.apply {
@@ -289,8 +313,8 @@ abstract class TextComponent(
             selectionModel.takeIf { it.hasSelection }?.deleteSelectedText(textBuffer, caretModel, undoManager)
 
             val position = caretModel.getCurrentPosition()
-            undoManager.addEdit(TextAction.Insert(position.offset, newLineChar.toString(), position.offset))
-            textBuffer.insertChar(newLineChar, position.offset)
+            undoManager.addEdit(TextAction.Insert(position.offset, NEW_LINE_CHAR.toString(), position.offset))
+            textBuffer.insertChar(NEW_LINE_CHAR, position.offset)
             caretModel.moveRight()
         }
 
@@ -304,7 +328,7 @@ abstract class TextComponent(
         }
 
         override fun keyTyped(e: KeyEvent) {
-            if (e.keyChar != KeyEvent.CHAR_UNDEFINED && e.keyChar != '\b' && !(e.isControlDown || e.isMetaDown) && e.keyChar != newLineChar) {
+            if (e.keyChar != KeyEvent.CHAR_UNDEFINED && e.keyChar != '\b' && !(e.isControlDown || e.isMetaDown) && e.keyChar != NEW_LINE_CHAR) {
                 if (selectionModel.hasSelection) {
                     selectionModel.deleteSelectedText(textBuffer, caretModel, undoManager)
                 }
