@@ -9,45 +9,32 @@ sealed class Theme(
     data object Dark : Theme(
         uiManager = FlatDarkLaf(),
         colors = ThemeColors(
-            background = Color(50, 50, 50),
-            foreground = Color(220, 220, 220),
-            selection = Color(100, 100, 100),
-            scrollBar = Color(80, 80, 80),
+            background = Color(43, 43, 43),
+            foreground = Color(187, 187, 187),
+            selection = Color(33, 66, 131),
+            scrollBar = Color(85, 85, 85),
             scrollBarHover = Color(100, 100, 100),
-            scrollBarDrag = Color(120, 120, 120),
-            scrollBarBackground = Color(60, 60, 60),
-            caret = Color.WHITE,
-            lineNumbersText = Color(150, 150, 150),
-            lineNumbersBackground = Color(45, 45, 45)
+            scrollBarDrag = Color(110, 110, 110),
+            scrollBarBackground = Color(49, 49, 49),
+            caret = Color(187, 187, 187),
+            lineNumbersText = Color(145, 145, 145),
+            lineNumbersBackground = Color(43, 43, 43)
         )
     )
 
     data object Light : Theme(
         uiManager = FlatLightLaf(),
         colors = ThemeColors(
-            background = Color(230, 230, 230),
-            foreground = Color.BLACK,
-            selection = Color.PINK,
-            scrollBar = Color.LIGHT_GRAY,
-            scrollBarHover = Color.GRAY,
-            scrollBarDrag = Color(110, 110, 110),
-            scrollBarBackground = Color(230, 230, 230),
-            caret = Color.BLACK,
-            lineNumbersText = Color.GRAY,
-            lineNumbersBackground = Color(230, 230, 230)
+            background = Color(250, 250, 250),
+            foreground = Color(30, 30, 30),
+            selection = Color(164, 191, 236),
+            scrollBar = Color(205, 205, 205),
+            scrollBarHover = Color(190, 190, 190),
+            scrollBarDrag = Color(172, 172, 172),
+            scrollBarBackground = Color(245, 245, 245),
+            caret = Color(30, 30, 30),
+            lineNumbersText = Color(110, 110, 110),
+            lineNumbersBackground = Color(250, 250, 250)
         )
     )
 }
-
-data class ThemeColors(
-    val background: Color,
-    val foreground: Color,
-    val selection: Color,
-    val scrollBar: Color,
-    val scrollBarHover: Color,
-    val scrollBarDrag: Color,
-    val scrollBarBackground: Color,
-    val caret: Color,
-    val lineNumbersText: Color,
-    val lineNumbersBackground: Color
-)
