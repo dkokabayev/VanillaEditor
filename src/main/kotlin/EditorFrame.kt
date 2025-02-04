@@ -95,6 +95,7 @@ class EditorFrame : JFrame() {
     init {
         this.defaultCloseOperation = EXIT_ON_CLOSE
         this.setSize(EDITOR_WIDTH, EDITOR_HEIGHT)
+        this.isResizable = true
 
         WindowManager.setMainFrame(this)
 

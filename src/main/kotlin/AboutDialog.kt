@@ -48,6 +48,7 @@ class AboutDialog(parent: JFrame) : JDialog(parent, "About ${EditorFrame.APP_NAM
 
         contentPane.add(panel)
         pack()
+        isResizable = false
         setLocationRelativeTo(parent)
         defaultCloseOperation = DISPOSE_ON_CLOSE
     }

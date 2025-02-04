@@ -53,7 +53,8 @@ class ColorSettingsDialog(
         defaultCloseOperation = DISPOSE_ON_CLOSE
         createUI()
         pack()
-        setLocationRelativeTo(owner)
+        isResizable = false
+        setLocationRelativeTo(parent)
     }
 
     private fun createUI() {
